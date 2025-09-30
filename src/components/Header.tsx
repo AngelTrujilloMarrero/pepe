@@ -5,9 +5,9 @@ import Navigation from './Navigation';
 
 const Header: React.FC = () => {
   return (
-    <header className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white py-8">
+    <header className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white py-4 shadow-lg">
       {/* Animated background pattern */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse"></div>
       </div>
       
