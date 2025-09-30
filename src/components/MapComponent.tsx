@@ -191,7 +191,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ events }) => {
         </div>
       )}
 
-      <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10">
+      <div className="relative z-0 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10">
         <div 
           ref={mapRef}
           style={{ height: '500px', width: '100%' }}
