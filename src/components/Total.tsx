@@ -2,11 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Event } from '../types';
 import { BarChart3, TrendingUp, Calendar } from 'lucide-react';
 
-interface AnalizadorProps {
+interface TotalProps {
   events: Event[];
 }
 
-const Analizador: React.FC<AnalizadorProps> = ({ events }) => {
+const Total: React.FC<TotalProps> = ({ events }) => {
   const [selectedYear] = useState<number>(new Date().getFullYear());
 
   const yearStats = useMemo(() => {
@@ -85,4 +85,4 @@ const Analizador: React.FC<AnalizadorProps> = ({ events }) => {
   );
 };
 
-export default Analizador;
+export default Total;

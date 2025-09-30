@@ -3,7 +3,7 @@ import Header from './components/Header';
 import EventsList from './components/EventsList';
 import MapComponent from './components/MapComponent';
 import Statistics from './components/Statistics';
-import Analizador from './components/Analizador';
+import Total from './components/Total';
 import VisitCounter from './components/VisitCounter';
 import SocialMedia from './components/SocialMedia';
 import { useEvents } from './hooks/useEvents';
@@ -642,7 +642,7 @@ function App() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 space-y-12">
         {/* Events List */}
-        <section>
+        <section id="events">
           <EventsList 
             events={events} 
             onExportWeek={exportByDateToImage}
@@ -719,18 +719,18 @@ function App() {
         )}
 
         {/* Map */}
-        <section>
+        <section id="map">
           <MapComponent events={events} />
         </section>
 
         {/* Statistics */}
-        <section>
+        <section id="stats">
           <Statistics events={events} />
         </section>
 
-           {/* Analizador */}
-        <section>
-          <Analizador events={events} />
+           {/* Total */}
+        <section id="analyzer">
+          <Total events={events} />
         </section>
 
         {/* Visit Counter */}
@@ -739,7 +739,7 @@ function App() {
         </section>
 
         {/* Social Media */}
-        <section>
+        <section id="social">
           <SocialMedia />
         </section>
       </div>
