@@ -194,6 +194,18 @@
   animation-duration: 1.5s, 4s;
   transform: scale(1.15);
 }
+
+@keyframes background-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
 .orchestra-names-container {
   display: inline-flex;
   flex-wrap: wrap;

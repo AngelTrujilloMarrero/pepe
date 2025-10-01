@@ -16,6 +16,10 @@ module.exports = {
 			},
 		},
 		extend: {
+			fontFamily: {
+				sans: ['"Exo 2"', 'sans-serif'],
+				orbitron: ['Orbitron', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

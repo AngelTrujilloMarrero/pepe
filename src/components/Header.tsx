@@ -5,11 +5,7 @@ import Navigation from './Navigation';
 
 const Header: React.FC = () => {
   return (
-<header className="sticky top-0 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white py-2 md:py-4 shadow-lg">
-      {/* Animated background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse"></div>
-      </div>
+<header className="sticky top-0 z-50 text-white py-2 md:py-4 shadow-lg max-h-[35vh] bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-700" style={{ backgroundSize: '200% 200%', animation: 'background-pan 10s ease infinite' }}>
       
       <div className="relative container mx-auto px-4 text-center">
         {/* Logo Section */}
@@ -42,7 +38,7 @@ const Header: React.FC = () => {
 
         {/* Main Title */}
         <div className="hidden md:block mb-2">
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent animate-pulse">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-orbitron gradient-text">
             DE BELINGO CON ÁNGEL
           </h1>
         </div>
