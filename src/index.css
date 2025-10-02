@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    scroll-behavior: smooth;
+    scroll-padding-top: 10rem; /* Adjust as needed */
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -212,7 +214,7 @@
   background-image: url('/eltablero.jpg');
   background-size: cover;
   background-position: center;
-  filter: blur(8px);
+  filter: blur(2px);
   transform: scale(1.1); /* Avoid seeing blurred edges */
   z-index: -2;
 }

@@ -642,7 +642,7 @@ function App() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 space-y-12">
         {/* Events List */}
-        <section id="events" className="scroll-mt-28">
+        <section id="events">
           <EventsList 
             events={events} 
             onExportWeek={exportByDateToImage}
@@ -719,17 +719,17 @@ function App() {
         )}
 
         {/* Map */}
-        <section id="map" className="scroll-mt-28">
+        <section id="map">
           <MapComponent events={events} />
         </section>
 
         {/* Statistics */}
-        <section id="stats" className="scroll-mt-28">
+        <section id="stats">
           <Statistics events={events} />
         </section>
 
            {/* Total */}
-        <section id="analyzer" className="scroll-mt-28">
+        <section id="analyzer">
           <Total events={events} />
         </section>
 
@@ -739,7 +739,7 @@ function App() {
         </section>
 
         {/* Social Media */}
-        <section id="social" className="scroll-mt-28">
+        <section id="social">
           <SocialMedia />
         </section>
       </div>
