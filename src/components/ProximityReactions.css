@@ -1,0 +1,90 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #012;
+}
+
+:root {
+  --ball-size: 42;
+  --impect-radius: 192;
+}
+
+.baseLight {
+  position: absolute;
+  inset: calc(50% - (var(--ball-size) * 6px));
+  background-image: radial-gradient(closest-side, #fff, 2%, transparent);
+  transform: translate(calc(var(--mx) * 1px), calc(var(--my) * 1px));
+}
+
+.shadows, .balls {
+  position: absolute;
+  inset: 50%;
+}
+
+.shadows div, .balls div {
+  position: absolute;
+  --x: calc(cos(var(--i) / 6 * 3.14159) * 3);
+  --y: calc(sin(var(--i) / 6 * 3.14159) * 3);
+  --hue: calc((var(--x) + var(--y)) * 4);
+  --dx: calc(var(--x) * var(--ball-size) - var(--mx, -9999));
+  --dy: calc(var(--y) * var(--ball-size) - var(--my, -9999));
+  --dist: calc(sqrt(var(--dx) * var(--dx) + var(--dy) * var(--dy)));
+  --dist-factor: calc((var(--impect-radius) - min(var(--dist), var(--impect-radius))) / var(--impect-radius));
+  --angle: atan2(var(--dy), var(--dx));
+  --_translate: calc(var(--dist-factor) * var(--ball-size) * 1px);
+}
+
+.shadow {
+  left: calc(var(--x) * var(--ball-size) * 1px);
+  top: calc((var(--y) - 0.5) * var(--ball-size) * 1px);
+  width: calc(var(--ball-size) * 2px);
+  height: calc(var(--ball-size) * 1px);
+  transform-origin: left;
+  background-image: linear-gradient(to right, #000, transparent);
+  opacity: var(--dist-factor, 0);
+  transform:
+    rotate(var(--angle))
+    translate(var(--_translate))
+    perspective(calc(var(--ball-size) * 2px))
+    rotateY(calc(var(--dist-factor) * -50deg - 20deg));
+}
+
+.ball {
+  --_bpx1: calc(var(--dist-factor) * 100% - 100%);
+  --_bpx2: calc(var(--dist-factor) * -100% + 50%);
+  left: calc((var(--x) - 0.5) * var(--ball-size) * 1px);
+  top: calc((var(--y) - 0.5) * var(--ball-size) * 1px);
+  width: calc(var(--ball-size) * 1px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: hsl(var(--hue), 100%, 50%);
+  background-image:
+    radial-gradient(circle at var(--_bpx1, -100%) 50%, #fff, 25%, transparent),
+    radial-gradient(circle at var(--_bpx2, 50%) 50%, transparent, #000a 100%);
+  background-repeat: no-repeat;
+  transform: rotate(var(--angle)) translate(var(--_translate));
+}
+
+.ball::before, .ball::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--ball-size) * 0.3px);
+  background-color: #fff;
+  border-radius: 50%;
+  background-image:
+    radial-gradient(closest-side, transparent 50%, #000),
+    radial-gradient(circle at 30% 50%, #000 35%, transparent 40%);
+  transform:
+    rotate(calc(var(--angle) * -1))
+    translate(calc(var(--ball-size) * var(--_tx, -0.2px)), calc(var(--ball-size) * -0.1px))
+    scaleY(var(--dist-factor, 0))
+    rotate(var(--angle));
+}
+
+.ball::after {
+  --_tx: 0.2px;
+}
