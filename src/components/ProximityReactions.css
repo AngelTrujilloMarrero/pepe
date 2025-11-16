@@ -1,0 +1,28 @@
+.proximity-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.proximity-content {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease-out;
+}
+
+.proximity-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at var(--x) var(--y), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 40%);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+
+.proximity-wrapper:hover .proximity-glow {
+    opacity: 1;
+}
