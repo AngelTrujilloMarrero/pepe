@@ -2,6 +2,7 @@ import React from 'react';
 import { Instagram, Facebook, MessageCircle, Send } from 'lucide-react';
 import DBCALogo from './DBCALogo';
 import Navigation from './Navigation';
+import ProximityReactions from './ProximityReactions';
 
 const Header: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const Header: React.FC = () => {
         animation: 'background-pan 10s ease infinite'
       }}
     >
+      <ProximityReactions />
       <div className="relative container mx-auto px-4 text-center flex flex-col justify-center h-full">
         {/* Top section with Logo and Social Icons */}
         <div className="flex items-center justify-center gap-4 md:gap-6 w-full">
