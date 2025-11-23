@@ -74,7 +74,7 @@ const Header: React.FC = () => {
             </a>
           </div>
 
-          <div className="transform scale-[0.54] md:scale-[0.70] -my-4 md:-my-2">
+          <div className="transform scale-[0.45] md:scale-[0.60] -my-2 md:-my-1 translate-y-[4%]">
             <DBCALogo />
           </div>
 
@@ -90,8 +90,16 @@ const Header: React.FC = () => {
 
         {/* Main Title & Subtitle */}
         <div className="hidden md:block -mt-2 mb-1">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-orbitron gradient-text tracking-widest transform scale-x-110 origin-center inline-block">
-            DE BELINGO CON ÁNGEL
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-orbitron tracking-widest transform scale-x-110 origin-center inline-block group/text cursor-pointer transition-transform duration-300 hover:scale-125 py-2 perspective-[1000px]">
+            {"DE BELINGO CON ÁNGEL".split('').map((char, index) => (
+              <span
+                key={index}
+                className="gradient-text-wave group-hover/text:animate-[wave_1s_ease-in-out_infinite]"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                {char === ' ' ? '\u00A0' : char}
+              </span>
+            ))}
           </h1>
           <p className="text-base md:text-lg font-semibold text-blue-100 animate-fade-in">
             Verbenas en Tenerife

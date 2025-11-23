@@ -161,7 +161,7 @@ const EventsList: React.FC<EventsListProps> = ({ events, onExportWeek, onExportF
               className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-1 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed"
             >
               <Download className="w-5 h-5" />
-              {showDatePickers ? 'Generar Imagen' : 'Exportar por Fechas'}
+              {showDatePickers ? 'Generar Imagen' : 'Exportar por fechas'}
             </button>
 
             <button
