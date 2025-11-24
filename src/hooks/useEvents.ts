@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { onValue } from '../utils/firebase';
 import { eventsRef } from '../utils/firebase';
 import { Event, RecentActivityItem } from '../types';
@@ -7,6 +7,9 @@ export function useEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const prevEventsRef = useRef<Event[]>([]);
+  const deletedEventsRef = useRef<RecentActivityItem[]>([]);
 
   useEffect(() => {
     const unsubscribe = onValue(eventsRef, (snapshot) => {
@@ -17,28 +20,37 @@ export function useEvents() {
       if (data) {
         Object.entries(data).forEach(([key, value]: [string, any]) => {
           const event: Event = { id: key, ...value };
-
-          // Ensure dates exist for comparison, but don't overwrite with 'now' if missing
-          // If missing, they will be treated as old dates during sort
-
           allEvents.push(event);
-
-          // Solo agregar eventos que NO estén cancelados para la lista principal
           if (!event.cancelado) {
             loadedEvents.push(event);
           }
         });
       }
 
-      // Calculate recent activity (last 3 modifications)
-      const activity = allEvents
-        .filter(e => e.FechaEditado || e.FechaAgregado) // Only show events that actually have a date
-        .sort((a, b) => {
-          const dateA = new Date(a.FechaEditado || a.FechaAgregado || 0).getTime();
-          const dateB = new Date(b.FechaEditado || b.FechaAgregado || 0).getTime();
-          return dateB - dateA;
-        })
-        .slice(0, 5)
+      // Detect hard deletions
+      if (prevEventsRef.current.length > 0) {
+        const currentIds = new Set(allEvents.map(e => e.id));
+        const newlyDeleted = prevEventsRef.current.filter(e => !currentIds.has(e.id));
+
+        newlyDeleted.forEach(deletedEvent => {
+          // Check if already in deletedEventsRef to avoid duplicates
+          if (!deletedEventsRef.current.some(item => item.event.id === deletedEvent.id)) {
+            deletedEventsRef.current.push({
+              type: 'delete',
+              event: {
+                ...deletedEvent,
+                FechaEditado: new Date().toISOString() // Mark as deleted NOW
+              }
+            });
+          }
+        });
+      }
+
+      prevEventsRef.current = allEvents;
+
+      // Calculate recent activity
+      const currentActivity: RecentActivityItem[] = allEvents
+        .filter(e => e.FechaEditado || e.FechaAgregado)
         .map(event => {
           let type: 'add' | 'edit' | 'delete' = 'edit';
           if (event.cancelado) {
@@ -49,8 +61,18 @@ export function useEvents() {
           return { type, event };
         });
 
+      const combinedActivity = [...currentActivity, ...deletedEventsRef.current];
+
+      const sortedActivity = combinedActivity
+        .sort((a, b) => {
+          const dateA = new Date(a.event.FechaEditado || a.event.FechaAgregado || 0).getTime();
+          const dateB = new Date(b.event.FechaEditado || b.event.FechaAgregado || 0).getTime();
+          return dateB - dateA;
+        })
+        .slice(0, 5);
+
       setEvents(loadedEvents);
-      setRecentActivity(activity);
+      setRecentActivity(sortedActivity);
       setLoading(false);
     });
 
