@@ -10,18 +10,36 @@ const Header: React.FC = () => {
     const header = headerRef.current;
     if (!header) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = header.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      header.style.setProperty('--mouse-x', `${x}px`);
-      header.style.setProperty('--mouse-y', `${y}px`);
+    let rafId: number | null = null;
+    let rect = header.getBoundingClientRect();
+
+    const updateRect = () => {
+      rect = header.getBoundingClientRect();
     };
 
-    header.addEventListener('mousemove', handleMouseMove);
+    // Update rect on resize and scroll to ensure accuracy
+    window.addEventListener('resize', updateRect, { passive: true });
+    window.addEventListener('scroll', updateRect, { passive: true });
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (rafId) return;
+
+      rafId = requestAnimationFrame(() => {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        header.style.setProperty('--mouse-x', `${x}px`);
+        header.style.setProperty('--mouse-y', `${y}px`);
+        rafId = null;
+      });
+    };
+
+    header.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     return () => {
       header.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
 
