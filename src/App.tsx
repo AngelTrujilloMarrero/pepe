@@ -305,23 +305,33 @@ function App() {
       return dateB - dateA;
     });
 
-    const uniqueFestivals = [...new Set(currentEvents.map(event => {
-      return event.lugar ? `${event.lugar}, ${event.municipio}` : event.municipio;
-    }))];
+    const uniqueFestivalsMap = new Map();
+    currentEvents.forEach(event => {
+      const label = event.lugar ? `${event.lugar}, ${event.municipio}` : event.municipio;
+      if (!uniqueFestivalsMap.has(label)) {
+        uniqueFestivalsMap.set(label, {
+          label,
+          lugar: event.lugar || '',
+          municipio: event.municipio
+        });
+      }
+    });
 
-    return uniqueFestivals;
+    return Array.from(uniqueFestivalsMap.values());
   }, [events]);
 
   // Export specific festival to image
-  const exportFestivalToImage = useCallback(async (selectedFestival: string) => {
-    if (!selectedFestival) return;
+  const exportFestivalToImage = useCallback(async (festivalJson: string) => {
+    if (!festivalJson) return;
 
     let lugar: string, municipio: string;
-    if (selectedFestival.includes(', ')) {
-      [lugar, municipio] = selectedFestival.split(', ');
-    } else {
-      lugar = '';
-      municipio = selectedFestival;
+    try {
+      const parsed = JSON.parse(festivalJson);
+      lugar = parsed.lugar;
+      municipio = parsed.municipio;
+    } catch (e) {
+      console.error("Error parsing festival JSON", e);
+      return;
     }
 
     const cutoffDate = new Date();
@@ -330,7 +340,7 @@ function App() {
     const cutoffDateString = cutoffDate.toISOString().split('T')[0];
 
     const festivalEvents = events.filter(event =>
-      event.lugar === lugar &&
+      (event.lugar || '') === lugar &&
       event.municipio === municipio &&
       event.day >= cutoffDateString
     );
@@ -371,35 +381,52 @@ function App() {
         opacity: 0.5;
     `;
 
-    const baseUrls = [
-      'http://debelingoconangel.web.app/fotos/',
-      'https://debelingo.webcindario.com/',
-      'http://debelingoconangel.infy.uk/fotos/'
-    ];
+    const generateImageUrls = () => {
+      const urls: string[] = [];
+      const baseUrls = [
+        'https://debelingoconangel.web.app/fotos/',
+        'https://debelingo.webcindario.com/',
+        'http://debelingoconangel.infy.uk/fotos/'
+      ];
+      const extensions = ['jpg', 'jpeg', 'png', 'webp', 'JPG', 'JPEG', 'PNG', 'WEBP'];
 
-    const normalizedLugar = lugar.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ñ/g, 'n').replace(/\s+/g, '');
-    const normalizedMunicipio = municipio.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ñ/g, 'n').replace(/\s+/g, '');
+      const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ñ/g, 'n');
 
-    const possibleImages = [
-      `${baseUrls[0]}${normalizedLugar}.jpg`, `${baseUrls[1]}${normalizedLugar}.jpg`, `${baseUrls[2]}${normalizedLugar}.jpg`,
-      `${baseUrls[0]}${normalizedLugar}.png`, `${baseUrls[1]}${normalizedLugar}.png`, `${baseUrls[2]}${normalizedLugar}.png`,
-      `${baseUrls[0]}${normalizedLugar}.PNG`, `${baseUrls[1]}${normalizedLugar}.PNG`, `${baseUrls[2]}${normalizedLugar}.PNG`,
-      `${baseUrls[0]}${normalizedLugar}.JPG`, `${baseUrls[1]}${normalizedLugar}.JPG`, `${baseUrls[2]}${normalizedLugar}.JPG`,
-      `${baseUrls[0]}${normalizedLugar}.jpeg`, `${baseUrls[1]}${normalizedLugar}.jpeg`, `${baseUrls[2]}${normalizedLugar}.jpeg`,
-      `${baseUrls[0]}${normalizedLugar}.JPEG`, `${baseUrls[1]}${normalizedLugar}.JPEG`, `${baseUrls[2]}${normalizedLugar}.JPEG`,
-      `${baseUrls[0]}${normalizedMunicipio}.jpg`, `${baseUrls[0]}${normalizedMunicipio}.png`,
-      `${baseUrls[0]}${normalizedLugar}_${normalizedMunicipio}.jpg`, `${baseUrls[0]}${normalizedMunicipio}_${normalizedLugar}.JPG`,
-      `${baseUrls[0]}${normalizedMunicipio}_${normalizedLugar}.jpg`, `${baseUrls[0]}${normalizedLugar}_${normalizedMunicipio}.JPG`,
-      `${baseUrls[0]}${normalizedLugar}_${normalizedMunicipio}.png`, `${baseUrls[0]}${normalizedMunicipio}_${normalizedLugar}.png`,
-      `${baseUrls[1]}${normalizedMunicipio}.jpg`, `${baseUrls[1]}${normalizedMunicipio}.JPG`, `${baseUrls[1]}${normalizedMunicipio}.png`,
-      `${baseUrls[1]}${normalizedLugar}_${normalizedMunicipio}.jpg`, `${baseUrls[1]}${normalizedMunicipio}_${normalizedLugar}.jpg`,
-      `${baseUrls[1]}${normalizedLugar}_${normalizedMunicipio}.JPG`, `${baseUrls[1]}${normalizedMunicipio}_${normalizedLugar}.JPG`,
-      `${baseUrls[1]}${normalizedLugar}_${normalizedMunicipio}.png`, `${baseUrls[1]}${normalizedMunicipio}_${normalizedLugar}.png`,
-      `${baseUrls[2]}${normalizedMunicipio}.jpg`, `${baseUrls[2]}${normalizedMunicipio}.JPG`, `${baseUrls[2]}${normalizedMunicipio}.png`,
-      `${baseUrls[2]}${normalizedLugar}_${normalizedMunicipio}.jpg`, `${baseUrls[2]}${normalizedMunicipio}_${normalizedLugar}.jpg`,
-      `${baseUrls[2]}${normalizedLugar}_${normalizedMunicipio}.JPG`, `${baseUrls[2]}${normalizedMunicipio}_${normalizedLugar}.JPG`,
-      `${baseUrls[2]}${normalizedLugar}_${normalizedMunicipio}.png`, `${baseUrls[2]}${normalizedMunicipio}_${normalizedLugar}.png`
-    ];
+      const variations: string[] = [];
+
+      const addVariations = (text: string) => {
+        if (!text) return;
+        const norm = normalize(text);
+        variations.push(norm.replace(/\s+/g, '')); // sanjuan
+        if (text.includes(' ')) {
+          variations.push(norm.replace(/\s+/g, '-')); // san-juan
+          variations.push(norm.replace(/\s+/g, '_')); // san_juan
+        }
+      };
+
+      if (lugar) {
+        addVariations(lugar);
+        const nLugar = normalize(lugar).replace(/\s+/g, '');
+        const nMunicipio = normalize(municipio).replace(/\s+/g, '');
+        variations.push(`${nLugar}_${nMunicipio}`);
+        variations.push(`${nMunicipio}_${nLugar}`);
+      }
+      addVariations(municipio);
+
+      const uniqueVariations = [...new Set(variations)];
+
+      for (const base of baseUrls) {
+        for (const variant of uniqueVariations) {
+          for (const ext of extensions) {
+            urls.push(`${base}${variant}.${ext}`);
+          }
+        }
+      }
+
+      return urls;
+    };
+
+    const possibleImages = generateImageUrls();
 
     const createContent = () => {
       const contentDiv = document.createElement('div');
@@ -612,12 +639,17 @@ function App() {
           link.href = canvas.toDataURL('image/png');
           link.click();
           document.body.removeChild(tempContainer);
+        }).catch(err => {
+          console.error("Error generating image with html2canvas:", err);
+          alert("Hubo un error al generar la imagen. Por favor, inténtalo de nuevo.");
+          document.body.removeChild(tempContainer);
         });
       }, 100);
     };
 
     const tryNextImage = (index: number) => {
       if (index >= possibleImages.length) {
+        console.warn("No se encontró ninguna imagen de fondo válida. Usando fondo blanco.");
         backgroundDiv.style.backgroundColor = 'white';
         createContent();
         return;
@@ -626,10 +658,14 @@ function App() {
       img.src = possibleImages[index];
       img.crossOrigin = 'anonymous';
       img.onload = () => {
+        console.log("Imagen cargada correctamente:", possibleImages[index]);
         backgroundDiv.style.backgroundImage = `url('${possibleImages[index]}')`;
         createContent();
       };
-      img.onerror = () => tryNextImage(index + 1);
+      img.onerror = () => {
+        // console.log("Fallo al cargar imagen (intentando siguiente):", possibleImages[index]);
+        tryNextImage(index + 1);
+      };
     };
 
     tryNextImage(0);
@@ -687,8 +723,8 @@ function App() {
                     >
                       <option value="">-- Selecciona una fiesta --</option>
                       {getUniqueFestivals().map((festival, index) => (
-                        <option key={index} value={festival}>
-                          Verbenas de {festival}
+                        <option key={index} value={JSON.stringify(festival)}>
+                          Verbenas de {festival.label}
                         </option>
                       ))}
                     </select>
