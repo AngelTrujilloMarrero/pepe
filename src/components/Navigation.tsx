@@ -2,7 +2,7 @@ import React from 'react';
 
 const Navigation: React.FC = () => {
   return (
-    <nav className="bg-black bg-opacity-20 backdrop-blur-sm p-2 rounded-full">
+    <nav className="bg-black/10 backdrop-blur-[2px] p-2 rounded-full">
       <div className="container mx-auto px-2 sm:px-4">
         <div className="flex justify-center items-center flex-wrap h-auto space-x-1 sm:space-x-2">
           <a href="#events" className="text-white hover:bg-white/20 font-semibold px-3 py-2 rounded-full transition-all duration-300">Eventos</a>
