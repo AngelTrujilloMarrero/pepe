@@ -52,39 +52,40 @@ function App() {
       const result = await runTransaction(exportUsageRef, (currentData) => {
         const now = Date.now();
         const timeWindow = 60 * 60 * 1000; // 1 hour
-        let timestamps: number[] = currentData ? Object.values(currentData) : [];
 
-        // Filter old timestamps
-        timestamps = timestamps.filter(ts => now - ts < timeWindow);
+        // Handle null/undefined or non-array data from Firebase
+        let timestamps: number[] = [];
+        if (currentData) {
+          if (Array.isArray(currentData)) {
+            timestamps = currentData;
+          } else if (typeof currentData === 'object') {
+            // Firebase may convert arrays to objects with numeric keys
+            timestamps = Object.values(currentData).filter((v): v is number => typeof v === 'number');
+          }
+        }
+
+        // Filter old timestamps (keep only those within the last hour)
+        timestamps = timestamps.filter(ts => typeof ts === 'number' && now - ts < timeWindow);
 
         if (timestamps.length >= limit) {
-          // Abort transaction if limit reached
-          return;
+          // Abort transaction if limit reached - returning undefined aborts the transaction
+          return undefined;
         }
 
         // Add new timestamp
         timestamps.push(now);
 
-        // Return new state (store as array or object, object is better for Firebase lists but array is ok if small)
-        // Firebase converts arrays to objects like {0: val, 1: val} sometimes. 
-        // Let's store as array, runTransaction works with it.
+        // Return new state
         return timestamps;
       });
 
-      // result.committed is true if the transaction completed successfully (update was made)
-      // If we returned undefined (abort), committed is false? No, we need to abort properly.
-      // Actually runTransaction returns { committed: boolean, snapshot: ... }
-      // If we return 'undefined' from updateFunction, the transaction is canceled ? 
-      // Documentation says: "If undefined is returned, the transaction is aborted."
-
+      // result.committed is true if the transaction completed (data was written)
+      // If we returned undefined, the transaction is aborted and committed is false
       return result.committed;
     } catch (e) {
       console.error("Error in global rate limit check:", e);
-      // Fail safe: if global check fails (network etc), maybe allow? Or deny?
-      // Let's allow to not break UX, or deny if strict. 
-      // User said "40 total", implying a hard limit. But if DB is down...
-      // Let's deny to be safe/strict as requested.
-      return false;
+      // On error (network issues, etc.), allow the action to avoid blocking users
+      return true;
     }
   };
 
