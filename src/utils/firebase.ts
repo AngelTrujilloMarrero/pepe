@@ -17,5 +17,6 @@ export const db = getDatabase(app);
 export const eventsRef = ref(db, 'events');
 export const visitCountRef = ref(db, 'visitCount');
 export const exportUsageRef = ref(db, 'exportUsage');
+export const socialFollowersRef = ref(db, 'socialFollowers');
 
 export { onValue, set, get, runTransaction };

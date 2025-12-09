@@ -1,5 +1,6 @@
 import React from 'react';
 import { Facebook, MessageCircle, Send, Instagram, Heart, BookOpen, Scroll } from 'lucide-react';
+import { socialFollowersRef, onValue, set, get } from '../utils/firebase';
 
 interface SocialLink {
   name: string;
@@ -9,80 +10,81 @@ interface SocialLink {
   hoverColor: string;
 }
 
+interface FollowersData {
+  Facebook: string;
+  Instagram: string;
+  WhatsApp: string;
+  Telegram: string;
+  lastUpdated?: string;
+}
+
+// Valores por defecto (fallback) - actualizados el 8/12/2025
+const DEFAULT_FOLLOWERS: FollowersData = {
+  Facebook: '35.297',
+  Instagram: '8.895',
+  WhatsApp: '2.100',
+  Telegram: '130',
+  lastUpdated: '2025-12-08'
+};
+
 const SocialMedia: React.FC = () => {
-  // Datos iniciales REALES obtenidos el 8/12/2025
-  const [followers, setFollowers] = React.useState<{ [key: string]: string }>({
-    'Facebook': '35.297',
-    'instagram': '8.895',
-    'WhatsApp': '2.100',
-    'Telegram': '130'
-  });
-
+  const [followers, setFollowers] = React.useState<FollowersData>(DEFAULT_FOLLOWERS);
   const [loading, setLoading] = React.useState(true);
+  const [dataSource, setDataSource] = React.useState<'firebase' | 'fallback'>('fallback');
 
-  // Función para obtener datos en tiempo real usando un proxy CORS
+  // Función para inicializar los datos en Firebase si no existen
+  const initializeFirebaseData = async () => {
+    try {
+      const snapshot = await get(socialFollowersRef);
+      if (!snapshot.exists()) {
+        // Si no hay datos en Firebase, guardar los valores por defecto
+        await set(socialFollowersRef, DEFAULT_FOLLOWERS);
+        console.log('Datos de seguidores inicializados en Firebase');
+      }
+    } catch (error) {
+      console.error('Error inicializando datos en Firebase:', error);
+    }
+  };
+
+  // Escuchar cambios en Firebase en tiempo real
   React.useEffect(() => {
-    const fetchRealTimeStats = async () => {
-      try {
-        setLoading(true);
-        const corsProxy = 'https://api.allorigins.win/get?url=';
+    setLoading(true);
 
-        // URLs para scrapear
-        const urls = {
-          facebook: 'https://www.facebook.com/debelingoconangel/',
-          instagram: 'https://www.instagram.com/debelingoconangel/',
-          whatsapp: 'https://whatsapp.com/channel/0029Va8nc2A77qVZokI0aC2K',
-          telegram: 'https://t.me/s/debelingoconangel'
-        };
+    // Primero intentar inicializar los datos si no existen
+    initializeFirebaseData();
 
-        // Promesas de fetch
-        const [fbData, igData, waData, tgData] = await Promise.allSettled([
-          fetch(corsProxy + encodeURIComponent(urls.facebook)).then(res => res.json()),
-          fetch(corsProxy + encodeURIComponent(urls.instagram)).then(res => res.json()),
-          fetch(corsProxy + encodeURIComponent(urls.whatsapp)).then(res => res.json()),
-          fetch(corsProxy + encodeURIComponent(urls.telegram)).then(res => res.json())
-        ]);
-
-        const newFollowers = { ...followers };
-
-        // 1. Parsear Facebook
-        if (fbData.status === 'fulfilled' && fbData.value.contents) {
-          // Buscar patrón "35.297 Me gusta" o similar en meta tags
-          const match = fbData.value.contents.match(/([0-9\s\.,]+)\s*Me gusta/i) ||
-            fbData.value.contents.match(/([0-9\.,]+[KM]?)\s*likes/i);
-          if (match && match[1]) newFollowers['Facebook'] = match[1].trim();
+    // Suscribirse a cambios en tiempo real
+    const unsubscribe = onValue(
+      socialFollowersRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val() as FollowersData;
+          setFollowers({
+            Facebook: data.Facebook || DEFAULT_FOLLOWERS.Facebook,
+            Instagram: data.Instagram || DEFAULT_FOLLOWERS.Instagram,
+            WhatsApp: data.WhatsApp || DEFAULT_FOLLOWERS.WhatsApp,
+            Telegram: data.Telegram || DEFAULT_FOLLOWERS.Telegram,
+            lastUpdated: data.lastUpdated || DEFAULT_FOLLOWERS.lastUpdated
+          });
+          setDataSource('firebase');
+        } else {
+          // Si no hay datos, usar los valores por defecto
+          setFollowers(DEFAULT_FOLLOWERS);
+          setDataSource('fallback');
         }
-
-        // 2. Parsear Instagram
-        if (igData.status === 'fulfilled' && igData.value.contents) {
-          // Buscar "8,895 Followers" en meta description
-          const match = igData.value.contents.match(/([0-9\.,]+[KM]?)\s*Followers/i);
-          if (match && match[1]) newFollowers['instagram'] = match[1].trim();
-        }
-
-        // 3. Parsear WhatsApp
-        if (waData.status === 'fulfilled' && waData.value.contents) {
-          // Buscar "2.1K followers"
-          const match = waData.value.contents.match(/([0-9\.,]+[KM]?)\s*followers/i);
-          if (match && match[1]) newFollowers['WhatsApp'] = match[1].trim();
-        }
-
-        // 4. Parsear Telegram
-        if (tgData.status === 'fulfilled' && tgData.value.contents) {
-          // Buscar "130 subscribers" en el canal preview
-          const match = tgData.value.contents.match(/([0-9\s\.,]+)\s*subscribers/i);
-          if (match && match[1]) newFollowers['Telegram'] = match[1].trim();
-        }
-
-        setFollowers(newFollowers);
-      } catch (error) {
-        console.error("Error obteniendo datos en tiempo real:", error);
-      } finally {
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error obteniendo datos de Firebase:', error);
+        // En caso de error, usar valores por defecto
+        setFollowers(DEFAULT_FOLLOWERS);
+        setDataSource('fallback');
         setLoading(false);
       }
-    };
+    );
 
-    fetchRealTimeStats();
+    // Cleanup: desuscribirse cuando el componente se desmonte
+    return () => unsubscribe();
   }, []);
 
   const socialLinks: SocialLink[] = [
@@ -160,7 +162,7 @@ const SocialMedia: React.FC = () => {
                           {loading ? (
                             <span className="animate-pulse">...</span>
                           ) : (
-                            followers[social.name] || followers[social.name.toLowerCase()] || 'Wait...'
+                            followers[social.name as keyof FollowersData] || 'N/A'
                           )}
                         </span>
                       </div>
@@ -188,6 +190,12 @@ const SocialMedia: React.FC = () => {
               </p>
               <p className="text-purple-300 text-xs mt-2">
                 ¡Únete a nuestra comunidad de amantes de las verbenas de Tenerife!
+              </p>
+              {/* Indicador de última actualización */}
+              <p className="text-purple-400/70 text-xs mt-3 flex items-center justify-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${dataSource === 'firebase' ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
+                {dataSource === 'firebase' ? '📊 Datos en tiempo real' : '📌 Datos de respaldo'}
+                {followers.lastUpdated && ` • Última actualización: ${followers.lastUpdated}`}
               </p>
             </div>
           </div>
