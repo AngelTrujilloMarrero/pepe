@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { X, TrendingUp, TrendingDown, Calendar, MapPin, Star } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { Doughnut } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Event } from '../types';
 import { zonasIsla, diasSemana } from '../utils/zones';
@@ -93,19 +93,21 @@ const ComparativaDetailedAnalysis: React.FC<ComparativaDetailedAnalysisProps> = 
         };
     }, [orquesta, month, events, selectedYear]);
 
-    // Crear datos para gráficas de quesito 3D
-    const createPieData = (counts: { [key: string]: number }, title: string) => {
+    // Crear datos para gráficas de "Donut" minimalista
+    const createDoughnutData = (counts: { [key: string]: number }, title: string) => {
         const labels = Object.keys(counts);
         const data = Object.values(counts);
 
+        // Paleta de colores minimalista y vibrante "Neon Pastel"
         const colors = [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-            'rgba(255, 159, 64, 0.8)',
-            'rgba(199, 199, 199, 0.8)',
+            'rgb(99, 102, 241)',   // Indigo
+            'rgb(168, 85, 247)',   // Purple
+            'rgb(236, 72, 153)',   // Pink
+            'rgb(244, 63, 94)',    // Rose
+            'rgb(249, 115, 22)',   // Orange
+            'rgb(234, 179, 8)',    // Yellow
+            'rgb(34, 197, 94)',    // Green
+            'rgb(6, 182, 212)',    // Cyan
         ];
 
         return {
@@ -114,182 +116,214 @@ const ComparativaDetailedAnalysis: React.FC<ComparativaDetailedAnalysisProps> = 
                 label: title,
                 data,
                 backgroundColor: colors.slice(0, labels.length),
-                borderColor: colors.slice(0, labels.length).map(c => c.replace('0.8', '1')),
-                borderWidth: 2,
-                hoverOffset: 20,
+                borderColor: 'transparent',
+                borderWidth: 0,
+                hoverOffset: 15,
+                borderRadius: 4, // Bordes redondeados sutiles en los segmentos
+                spacing: 2,      // Pequeño espacio entre segmentos para look limpio
             }]
         };
     };
 
-    const pieOptions = {
+    const chartOptions = {
         responsive: true,
         maintainAspectRatio: true,
+        cutout: '65%', // Hace que sea un Donut en lugar de Pie (más minimalista)
         plugins: {
             legend: {
                 position: 'bottom' as const,
                 labels: {
-                    color: 'white',
-                    padding: 10,
-                    font: { size: 11 }
+                    color: '#94a3b8', // Slate-400 para texto suave
+                    padding: 15,
+                    usePointStyle: true, // Puntos en lugar de cajas
+                    pointStyle: 'circle',
+                    font: {
+                        size: 11,
+                        family: 'Inter, sans-serif'
+                    }
                 }
             },
             tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                titleColor: 'white',
-                bodyColor: 'white',
-                borderColor: 'rgba(255, 255, 255, 0.3)',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)', // Slate-900 muy oscuro
+                titleColor: '#e2e8f0',
+                bodyColor: '#e2e8f0',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
                 borderWidth: 1,
-                cornerRadius: 8,
+                cornerRadius: 12,
+                padding: 12,
+                boxPadding: 4
             },
             datalabels: {
                 color: 'white',
                 font: {
                     weight: 'bold' as const,
-                    size: 14
+                    size: 12
                 },
                 formatter: (value: number, context: any) => {
                     const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
                     const percentage = ((value / total) * 100).toFixed(0);
-                    return `${percentage}%`;
+                    // Solo mostrar si es significativo para evitar ruido visual
+                    return percentage > '5' ? `${percentage}%` : '';
                 },
-                // Crear efecto 3D con sombras
-                shadowBlur: 10,
-                shadowColor: 'rgba(0, 0, 0, 0.8)',
-                shadowOffsetX: 2,
-                shadowOffsetY: 2,
+                // Eliminar sombras pesadas para look "flat" minimalista
+                textShadowBlur: 0,
             }
         },
         layout: {
             padding: 20
+        },
+        elements: {
+            arc: {
+                borderWidth: 0
+            }
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto border-2 border-purple-500/30">
-                {/* Header */}
-                <div className="sticky top-0 bg-gradient-to-r from-pink-600 to-rose-600 p-6 rounded-t-2xl">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+            <div className="bg-[#0f172a] rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-gray-800 animate-in fade-in zoom-in duration-300">
+                {/* Header Minimalista */}
+                <div className="sticky top-0 bg-[#0f172a]/95 backdrop-blur-md p-6 border-b border-gray-800 flex justify-between items-center z-10">
+                    <div>
+                        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                            {orquesta}
+                        </h2>
+                        <p className="text-gray-400 text-sm capitalize mt-1 flex items-center gap-2">
+                            <Calendar className="w-4 h-4" /> {month} • {selectedYear - 1} vs {selectedYear}
+                        </p>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-gray-700 hover:bg-red-600 transition-colors duration-300"
+                        className="p-2 rounded-full bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white transition-all duration-200"
                     >
-                        <X className="w-5 h-5 text-white" />
+                        <X className="w-5 h-5" />
                     </button>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white text-center">
-                        📊 Análisis Detallado: {orquesta}
-                    </h2>
-                    <p className="text-center text-pink-100 mt-2 capitalize">
-                        {month} - Comparativa {selectedYear - 1} vs {selectedYear}
-                    </p>
                 </div>
 
-                <div className="p-6 space-y-6">
-                    {/* Resumen de actuaciones */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-gray-700/50 rounded-lg p-4 text-center">
-                            <p className="text-gray-400 text-sm mb-2">{selectedYear - 1}</p>
-                            <p className="text-4xl font-bold text-blue-400">{analysis.prevCount}</p>
-                            <p className="text-gray-300 text-xs mt-1">actuaciones</p>
+                <div className="p-6 space-y-8">
+                    {/* KPI Cards Minimalistas */}
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-gray-800/30 rounded-2xl p-4 text-center border border-gray-700/50">
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{selectedYear - 1}</p>
+                            <p className="text-3xl font-bold text-gray-200">{analysis.prevCount}</p>
                         </div>
-                        <div className="bg-gradient-to-r from-yellow-600/30 to-orange-600/30 rounded-lg p-4 text-center border-2 border-yellow-500/50">
-                            <p className="text-gray-400 text-sm mb-2">Variación</p>
-                            <div className="flex items-center justify-center gap-2">
+
+                        <div className={`rounded-2xl p-4 text-center border ${analysis.variation > 0
+                            ? 'bg-green-500/10 border-green-500/20'
+                            : analysis.variation < 0
+                                ? 'bg-red-500/10 border-red-500/20'
+                                : 'bg-gray-800/30 border-gray-700/50'}`}>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Variación</p>
+                            <div className="flex items-center justify-center gap-1">
                                 {analysis.variation > 0 ? (
-                                    <TrendingUp className="w-8 h-8 text-green-400" />
+                                    <TrendingUp className="w-4 h-4 text-green-400" />
                                 ) : analysis.variation < 0 ? (
-                                    <TrendingDown className="w-8 h-8 text-red-400" />
+                                    <TrendingDown className="w-4 h-4 text-red-400" />
                                 ) : null}
-                                <p className={`text-4xl font-bold ${analysis.variation > 0 ? 'text-green-400' :
-                                    analysis.variation < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
+                                <span className={`text-2xl font-bold ${analysis.variation > 0 ? 'text-green-400' :
+                                    analysis.variation < 0 ? 'text-red-400' : 'text-gray-400'}`}>
                                     {analysis.variation > 0 ? '+' : ''}{analysis.variation.toFixed(0)}%
-                                </p>
+                                </span>
                             </div>
                         </div>
-                        <div className="bg-gray-700/50 rounded-lg p-4 text-center">
-                            <p className="text-gray-400 text-sm mb-2">{selectedYear}</p>
-                            <p className="text-4xl font-bold text-purple-400">{analysis.currentCount}</p>
-                            <p className="text-gray-300 text-xs mt-1">actuaciones</p>
+
+                        <div className="bg-gray-800/30 rounded-2xl p-4 text-center border border-gray-700/50">
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{selectedYear}</p>
+                            <p className="text-3xl font-bold text-blue-400">{analysis.currentCount}</p>
                         </div>
                     </div>
 
-                    {/* Gráficas 3D */}
-                    <div className="space-y-8 mt-8">
-                        {/* Comparativa de Zonas */}
-                        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <MapPin className="w-6 h-6 text-yellow-400" />
-                                Distribución por Zonas
+                    {/* Gráficas Doughnut */}
+                    <div className="space-y-6">
+                        {/* Zonas */}
+                        <div className="bg-gray-800/20 rounded-3xl p-6 border border-gray-800">
+                            <h3 className="text-lg font-medium text-gray-200 mb-6 flex items-center gap-2">
+                                <div className="p-2 bg-blue-500/10 rounded-lg">
+                                    <MapPin className="w-5 h-5 text-blue-400" />
+                                </div>
+                                Por Zonas
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {Object.keys(analysis.prevStats.zoneCounts).length > 0 && (
-                                    <div>
-                                        <h4 className="text-center text-gray-300 mb-4 font-semibold">{selectedYear - 1}</h4>
-                                        <div className="bg-gray-900/50 rounded-lg p-4" style={{ maxHeight: '300px' }}>
-                                            <Pie data={createPieData(analysis.prevStats.zoneCounts, 'Zonas')} options={pieOptions} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {[
+                                    { stats: analysis.prevStats.zoneCounts, year: selectedYear - 1 },
+                                    { stats: analysis.currentStats.zoneCounts, year: selectedYear }
+                                ].map((item, idx) => (
+                                    Object.keys(item.stats).length > 0 && (
+                                        <div key={idx} className="flex flex-col items-center">
+                                            <h4 className="text-sm font-medium text-gray-500 mb-4">{item.year}</h4>
+                                            <div className="relative w-full max-w-[280px] aspect-square">
+                                                <Doughnut data={createDoughnutData(item.stats, 'Zonas')} options={chartOptions as any} />
+                                                {/* Center Text for Doughnut feel */}
+                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <span className="text-2xl font-bold text-gray-700/50">
+                                                        {Object.values(item.stats).reduce((a, b) => a + b, 0)}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {Object.keys(analysis.currentStats.zoneCounts).length > 0 && (
-                                    <div>
-                                        <h4 className="text-center text-gray-300 mb-4 font-semibold">{selectedYear}</h4>
-                                        <div className="bg-gray-900/50 rounded-lg p-4" style={{ maxHeight: '300px' }}>
-                                            <Pie data={createPieData(analysis.currentStats.zoneCounts, 'Zonas')} options={pieOptions} />
-                                        </div>
-                                    </div>
-                                )}
+                                    )
+                                ))}
                             </div>
                         </div>
 
-                        {/* Comparativa de Días */}
-                        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <Calendar className="w-6 h-6 text-green-400" />
-                                Distribución por Días
+                        {/* Días */}
+                        <div className="bg-gray-800/20 rounded-3xl p-6 border border-gray-800">
+                            <h3 className="text-lg font-medium text-gray-200 mb-6 flex items-center gap-2">
+                                <div className="p-2 bg-purple-500/10 rounded-lg">
+                                    <Calendar className="w-5 h-5 text-purple-400" />
+                                </div>
+                                Por Días
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {Object.keys(analysis.prevStats.dayCounts).length > 0 && (
-                                    <div>
-                                        <h4 className="text-center text-gray-300 mb-4 font-semibold">{selectedYear - 1}</h4>
-                                        <div className="bg-gray-900/50 rounded-lg p-4" style={{ maxHeight: '300px' }}>
-                                            <Pie data={createPieData(analysis.prevStats.dayCounts, 'Días')} options={pieOptions} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {[
+                                    { stats: analysis.prevStats.dayCounts, year: selectedYear - 1 },
+                                    { stats: analysis.currentStats.dayCounts, year: selectedYear }
+                                ].map((item, idx) => (
+                                    Object.keys(item.stats).length > 0 && (
+                                        <div key={idx} className="flex flex-col items-center">
+                                            <h4 className="text-sm font-medium text-gray-500 mb-4">{item.year}</h4>
+                                            <div className="relative w-full max-w-[280px] aspect-square">
+                                                <Doughnut data={createDoughnutData(item.stats, 'Días')} options={chartOptions as any} />
+                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <span className="text-2xl font-bold text-gray-700/50">
+                                                        {Object.values(item.stats).reduce((a, b) => a + b, 0)}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {Object.keys(analysis.currentStats.dayCounts).length > 0 && (
-                                    <div>
-                                        <h4 className="text-center text-gray-300 mb-4 font-semibold">{selectedYear}</h4>
-                                        <div className="bg-gray-900/50 rounded-lg p-4" style={{ maxHeight: '300px' }}>
-                                            <Pie data={createPieData(analysis.currentStats.dayCounts, 'Días')} options={pieOptions} />
-                                        </div>
-                                    </div>
-                                )}
+                                    )
+                                ))}
                             </div>
                         </div>
 
-                        {/* Comparativa de Tipos */}
+                        {/* Tipos */}
                         {(Object.keys(analysis.prevStats.typeCounts).length > 0 || Object.keys(analysis.currentStats.typeCounts).length > 0) && (
-                            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                    <Star className="w-6 h-6 text-pink-400" />
-                                    Distribución por Tipos de Evento
+                            <div className="bg-gray-800/20 rounded-3xl p-6 border border-gray-800">
+                                <h3 className="text-lg font-medium text-gray-200 mb-6 flex items-center gap-2">
+                                    <div className="p-2 bg-pink-500/10 rounded-lg">
+                                        <Star className="w-5 h-5 text-pink-400" />
+                                    </div>
+                                    Por Tipo
                                 </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {Object.keys(analysis.prevStats.typeCounts).length > 0 && (
-                                        <div>
-                                            <h4 className="text-center text-gray-300 mb-4 font-semibold">{selectedYear - 1}</h4>
-                                            <div className="bg-gray-900/50 rounded-lg p-4" style={{ maxHeight: '300px' }}>
-                                                <Pie data={createPieData(analysis.prevStats.typeCounts, 'Tipos')} options={pieOptions} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {[
+                                        { stats: analysis.prevStats.typeCounts, year: selectedYear - 1 },
+                                        { stats: analysis.currentStats.typeCounts, year: selectedYear }
+                                    ].map((item, idx) => (
+                                        Object.keys(item.stats).length > 0 && (
+                                            <div key={idx} className="flex flex-col items-center">
+                                                <h4 className="text-sm font-medium text-gray-500 mb-4">{item.year}</h4>
+                                                <div className="relative w-full max-w-[280px] aspect-square">
+                                                    <Doughnut data={createDoughnutData(item.stats, 'Tipos')} options={chartOptions as any} />
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <span className="text-2xl font-bold text-gray-700/50">
+                                                            {Object.values(item.stats).reduce((a, b) => a + b, 0)}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                    {Object.keys(analysis.currentStats.typeCounts).length > 0 && (
-                                        <div>
-                                            <h4 className="text-center text-gray-300 mb-4 font-semibold">{selectedYear}</h4>
-                                            <div className="bg-gray-900/50 rounded-lg p-4" style={{ maxHeight: '300px' }}>
-                                                <Pie data={createPieData(analysis.currentStats.typeCounts, 'Tipos')} options={pieOptions} />
-                                            </div>
-                                        </div>
-                                    )}
+                                        )
+                                    ))}
                                 </div>
                             </div>
                         )}
