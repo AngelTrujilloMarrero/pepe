@@ -600,12 +600,17 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
           onClick={() => setShowTotal(!showTotal)}
           className="w-full flex items-center justify-between p-6 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 transition-all duration-300 group"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Trophy className="w-8 h-8 text-yellow-500 group-hover:scale-110 transition-transform" />
             <h2 className="text-2xl font-bold text-white">Ranking Completo {selectedYear}</h2>
-            <span className="text-sm font-normal text-gray-400 bg-black/40 px-3 py-1 rounded-full border border-white/10">
-              {fullSortedOrquestasList.length} formaciones
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-normal text-gray-400 bg-black/40 px-3 py-1 rounded-full border border-white/10">
+                {fullSortedOrquestasList.length} formaciones
+              </span>
+              <span className="text-sm font-normal text-gray-400 bg-black/40 px-3 py-1 rounded-full border border-white/10">
+                {Object.values(monthlyEventCount).reduce((a, b) => a + b, 0)} eventos
+              </span>
+            </div>
           </div>
           <ChevronDown className={`w-6 h-6 text-gray-400 transition-transform duration-500 ${showTotal ? 'rotate-180' : ''}`} />
         </button>
