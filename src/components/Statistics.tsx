@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Bar } from 'react-chartjs-2';
 import { BarChart3, Calendar, Trophy, TrendingUp, TrendingDown, ChevronDown, MousePointerClick, MapPin } from 'lucide-react';
 import { Event, OrquestaCount, MonthlyOrquestaCount } from '../types';
@@ -22,7 +23,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 interface StatisticsProps {
@@ -180,6 +182,19 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
         callbacks: {
           afterBody: () => showAnalysis ? ['', '👆 Haz clic para ver análisis detallado'] : []
         }
+      },
+      datalabels: {
+        color: 'white',
+        font: {
+          weight: 'bold' as const,
+          size: 14
+        },
+        anchor: 'end' as const,
+        align: 'start' as const,
+        offset: -4,
+        formatter: (value: number) => value,
+        textStrokeColor: 'rgba(0,0,0,0.8)',
+        textStrokeWidth: 3,
       },
     },
     scales: {
