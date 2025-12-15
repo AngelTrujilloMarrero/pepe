@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, Music2, Download, Navigation, Plus, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, MapPin, Music2, Download, Navigation, Plus, Edit, Trash2, Info, ExternalLink, ChevronDown, Facebook, Instagram, Globe, Phone } from 'lucide-react';
+import { onValue, orchestrasRef } from '../utils/firebase';
+import { orchestraDetails } from '../data/orchestras';
 import { Event, RecentActivityItem } from '../types';
 import { groupEventsByDay, sortEventsByDateTime, formatDayName, getLastUpdateDate } from '../utils/helpers';
 
@@ -14,6 +16,29 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
   const [showDatePickers, setShowDatePickers] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [expandedEventIds, setExpandedEventIds] = useState<string[]>([]);
+  const [dbOrchestras, setDbOrchestras] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const unsubscribe = onValue(orchestrasRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) setDbOrchestras(data);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const toggleEvent = (id: string) => {
+    setExpandedEventIds(prev =>
+      prev.includes(id) ? prev.filter(eid => eid !== id) : [...prev, id]
+    );
+  };
+
+  const getOrchestraInfo = (name: string) => {
+    const cleanName = name.trim();
+    const dbInfo = Object.values(dbOrchestras).find((o: any) => o.name === cleanName) || {};
+    const fileInfo = orchestraDetails[cleanName] || {};
+    return { ...fileInfo, ...dbInfo };
+  };
 
   const eventsByDay = groupEventsByDay(events);
   const sortedEvents = sortEventsByDateTime(events);
@@ -67,7 +92,8 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
                   {sortedDayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 rounded-lg p-4 border border-gray-600/30 hover:border-blue-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
+                      onDoubleClick={() => toggleEvent(event.id)}
+                      className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 rounded-lg p-4 border border-gray-600/30 hover:border-blue-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer select-none group"
                     >
                       <div className="flex flex-wrap items-center gap-4 text-center md:text-left min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2 text-blue-300 font-bold">
@@ -111,16 +137,74 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
                           </span>
                         </div>
                       </div>
+
+
+                      {/* Dropdown Details */}
+                      {
+                        expandedEventIds.includes(event.id) && (
+                          <div className="mt-4 pt-4 border-t border-gray-600/50 animate-fadeIn">
+                            <div className="bg-black/20 p-4 rounded-lg space-y-4">
+                              <h4 className="text-blue-300 font-semibold flex items-center gap-2 text-sm uppercase tracking-wide">
+                                <Info className="w-4 h-4" />
+                                Información de las formaciones
+                              </h4>
+                              <div className="grid gap-3">
+                                {event.orquesta.split(',').map((orqName, idx) => {
+                                  const cleanName = orqName.trim();
+                                  if (!cleanName || cleanName === 'DJ') return null;
+                                  const info = getOrchestraInfo(cleanName);
+
+                                  return (
+                                    <div key={idx} className="bg-gray-800/50 p-3 rounded border border-gray-700/50">
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <span className="font-bold text-white">{cleanName}</span>
+                                        <div className="flex gap-2">
+                                          {info.facebook && (
+                                            <a href={info.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">
+                                              <Facebook className="w-4 h-4" />
+                                            </a>
+                                          )}
+                                          {info.instagram && (
+                                            <a href={info.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 transition-colors">
+                                              <Instagram className="w-4 h-4" />
+                                            </a>
+                                          )}
+                                          {info.phone && (
+                                            <a href={`tel:${info.phone}`} className="text-green-400 hover:text-green-300 transition-colors">
+                                              <Phone className="w-4 h-4" />
+                                            </a>
+                                          )}
+                                          {(info.website || info.Otros) && (
+                                            <a href={info.website || info.Otros} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">
+                                              <Globe className="w-4 h-4" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-yellow-200/80 text-xs italic flex items-start gap-2">
+                                <ExternalLink className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                <p>
+                                  Recomendamos visitar las redes sociales oficiales de las orquestas para confirmar horarios y posibles cambios de última hora.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      }
                     </div>
                   ))}
                 </div>
               </div>
             );
           })}
-      </div>
+      </div >
 
       {/* Footer */}
-      <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 space-y-4">
+      < div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 space-y-4" >
         <div className="text-center text-green-400 font-bold text-sm">
           <div className="flex items-center justify-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -129,45 +213,47 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
         </div>
 
         {/* Recent Activity Block */}
-        {recentActivity && recentActivity.length > 0 && (
-          <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 w-full">
-            <h4 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3 text-center">
-              Últimos movimientos
-            </h4>
-            <div className="space-y-2">
-              {recentActivity.map((item, index) => (
-                <div key={index} className="flex items-center gap-3 text-sm bg-gray-800/50 p-2 rounded border border-gray-700/50">
-                  <div className={`p-1.5 rounded-full ${item.type === 'add' ? 'bg-green-500/20 text-green-400' :
-                    item.type === 'edit' ? 'bg-blue-500/20 text-blue-400' :
-                      'bg-red-500/20 text-red-400'
-                    }`}>
-                    {item.type === 'add' ? <Plus className="w-3 h-3" /> :
-                      item.type === 'edit' ? <Edit className="w-3 h-3" /> :
-                        <Trash2 className="w-3 h-3" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-medium ${item.type === 'add' ? 'text-green-300' :
-                        item.type === 'edit' ? 'text-blue-300' :
-                          'text-red-300'
-                        }`}>
-                        {item.type === 'add' ? 'Nuevo:' :
-                          item.type === 'edit' ? 'Editado:' :
-                            'Eliminado:'}
-                      </span>
-                      <span className="text-gray-300 truncate">
-                        {item.event.lugar ? `${item.event.lugar}, ` : ''}{item.event.municipio}
-                      </span>
+        {
+          recentActivity && recentActivity.length > 0 && (
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 w-full">
+              <h4 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3 text-center">
+                Últimos movimientos
+              </h4>
+              <div className="space-y-2">
+                {recentActivity.map((item, index) => (
+                  <div key={index} className="flex items-center gap-3 text-sm bg-gray-800/50 p-2 rounded border border-gray-700/50">
+                    <div className={`p-1.5 rounded-full ${item.type === 'add' ? 'bg-green-500/20 text-green-400' :
+                      item.type === 'edit' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                      {item.type === 'add' ? <Plus className="w-3 h-3" /> :
+                        item.type === 'edit' ? <Edit className="w-3 h-3" /> :
+                          <Trash2 className="w-3 h-3" />}
                     </div>
-                    <div className="text-gray-500 text-xs truncate">
-                      {item.event.orquesta} - {new Date(item.event.day).toLocaleDateString('es-ES')}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${item.type === 'add' ? 'text-green-300' :
+                          item.type === 'edit' ? 'text-blue-300' :
+                            'text-red-300'
+                          }`}>
+                          {item.type === 'add' ? 'Nuevo:' :
+                            item.type === 'edit' ? 'Editado:' :
+                              'Eliminado:'}
+                        </span>
+                        <span className="text-gray-300 truncate">
+                          {item.event.lugar ? `${item.event.lugar}, ` : ''}{item.event.municipio}
+                        </span>
+                      </div>
+                      <div className="text-gray-500 text-xs truncate">
+                        {item.event.orquesta} - {new Date(item.event.day).toLocaleDateString('es-ES')}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Export Section */}
         <div className="flex flex-col items-center gap-4">
@@ -215,8 +301,8 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
