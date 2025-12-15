@@ -40,6 +40,7 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
   const [prevYearMonthlyData, setPrevYearMonthlyData] = useState<MonthlyOrquestaCount>({});
   const [prevYearMonthlyEventCount, setPrevYearMonthlyEventCount] = useState<{ [month: string]: number }>({});
   const [selectedComparativaOrquesta, setSelectedComparativaOrquesta] = useState<{ name: string; month: string } | null>(null);
+  const [showTotal, setShowTotal] = useState(false);
 
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
@@ -113,12 +114,15 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
     setPrevYearMonthlyEventCount(prevMonthlyEvents);
   };
 
-  const sortedOrquestasList = useMemo(() => {
+  const fullSortedOrquestasList = useMemo(() => {
     return Object.entries(currentYearData)
       .sort(([, a], [, b]) => b - a)
-      .slice(0, 15)
       .map(([name, count]) => ({ name, count }));
   }, [currentYearData]);
+
+  const sortedOrquestasList = useMemo(() => {
+    return fullSortedOrquestasList.slice(0, 15);
+  }, [fullSortedOrquestasList]);
 
   const createChartData = (data: OrquestaCount) => {
     const sortedData = Object.entries(data)
@@ -569,6 +573,49 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
           onClose={() => setSelectedComparativaOrquesta(null)}
         />
       )}
+
+      {/* Ranking Total (Collapsible) */}
+      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl overflow-hidden mt-12 border border-white/5">
+        <button
+          onClick={() => setShowTotal(!showTotal)}
+          className="w-full flex items-center justify-between p-6 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 transition-all duration-300 group"
+        >
+          <div className="flex items-center gap-3">
+            <Trophy className="w-8 h-8 text-yellow-500 group-hover:scale-110 transition-transform" />
+            <h2 className="text-2xl font-bold text-white">Ranking Completo {selectedYear}</h2>
+            <span className="text-sm font-normal text-gray-400 bg-black/40 px-3 py-1 rounded-full border border-white/10">
+              {fullSortedOrquestasList.length} formaciones
+            </span>
+          </div>
+          <ChevronDown className={`w-6 h-6 text-gray-400 transition-transform duration-500 ${showTotal ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showTotal && (
+          <div className="p-6 animate-fadeIn">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {fullSortedOrquestasList.map((item, index) => (
+                <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all cursor-default">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <span className={`
+                                    w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg text-sm font-bold
+                                    ${index < 3 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                        index < 10 ? 'bg-white/10 text-white' : 'text-gray-500 bg-black/20'}
+                                `}>
+                      #{index + 1}
+                    </span>
+                    <span className="text-gray-300 text-sm font-medium truncate" title={item.name}>
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                    {item.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

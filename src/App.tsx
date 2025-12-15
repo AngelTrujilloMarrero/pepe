@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import { useEvents } from './hooks/useEvents';
 import { Loader2 } from 'lucide-react';
-import { EventosPage, MapaPage, EstadisticasPage, TotalPage, RedesPage, FormacionesPage } from './pages';
+import { EventosPage, MapaPage, EstadisticasPage, RedesPage, FormacionesPage } from './pages';
 
 function App() {
   const { events, recentActivity, loading } = useEvents();
@@ -31,7 +31,7 @@ function App() {
           <Route path="/" element={<EventosPage events={events} recentActivity={recentActivity} />} />
           <Route path="/mapa" element={<MapaPage events={events} />} />
           <Route path="/estadisticas" element={<EstadisticasPage events={events} />} />
-          <Route path="/total" element={<TotalPage events={events} />} />
+
           <Route path="/formaciones" element={<FormacionesPage events={events} />} />
           <Route path="/redes" element={<RedesPage />} />
         </Routes>

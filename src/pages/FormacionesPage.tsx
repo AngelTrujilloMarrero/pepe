@@ -13,7 +13,6 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [dbOrchestras, setDbOrchestras] = useState<Record<string, any>>({});
     const [scrapedImages, setScrapedImages] = useState<Record<string, string>>({});
-    const [scrapedOrchestras, setScrapedOrchestras] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const unsubscribe = onValue(orchestrasRef, (snapshot) => {
@@ -85,43 +84,106 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
     }, [events, dbOrchestras]);
 
     // Scrape images effect
+    // State for managing the robust multi-round scraping process
+    const [orchestraStates, setOrchestraStates] = useState<Record<string, { round: number; failuresInRound: number; permanentFailure: boolean }>>({});
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    // Scrape images effect - Robust "Round" System
     useEffect(() => {
-        const triggerScraping = async () => {
-            const potentialTargets = formaciones.filter(f =>
+        if (isProcessing) return; // Prevent concurrent processing
+
+        const processNext = async () => {
+            // 1. Identify all valid candidates that still need an image
+            const candidates = formaciones.filter(f =>
                 f.hasDbInfo &&
+                (f.facebook || f.instagram) &&
                 !f.image &&
                 !scrapedImages[f.name] &&
-                !scrapedOrchestras.has(f.name) &&
-                (f.facebook || f.instagram)
+                !orchestraStates[f.name]?.permanentFailure
             );
 
-            if (potentialTargets.length === 0) return;
+            if (candidates.length === 0) return;
 
-            // Mark as attempted immediately to avoid duplicates
-            setScrapedOrchestras(prev => {
-                const newSet = new Set(prev);
-                potentialTargets.forEach(t => newSet.add(t.name));
-                return newSet;
+            // 2. Select priority candidate based on Round
+            // We want to finish all Round 1s before starting Round 2s, etc.
+            const getRound = (name: string) => orchestraStates[name]?.round || 1;
+
+            // Sort: Lowest Round first. Then preserve original order (event count popularity)
+            const sortedCandidates = candidates.sort((a, b) => {
+                const roundA = getRound(a.name);
+                const roundB = getRound(b.name);
+                if (roundA !== roundB) return roundA - roundB;
+                return 0; // Stable sort within same round
             });
 
-            // Process one by one or in small batches
-            for (const target of potentialTargets) {
+            // 3. Pick the winner
+            const target = sortedCandidates[0];
+            const name = target.name;
+            // Default state is Round 1, 0 failures
+            const state = orchestraStates[name] || { round: 1, failuresInRound: 0, permanentFailure: false };
+
+            setIsProcessing(true);
+
+            try {
+                // "Entre orquesta y orquesta tiene que haber un lapsus de tiempo mínimo"
+                // 1500ms delay between attempts is safe/courteous
+                await new Promise(r => setTimeout(r, 1500));
+
                 const url = target.facebook || target.instagram;
-                if (url) {
-                    try {
-                        const img = await scrapeProfileImage(url);
-                        if (img) {
-                            setScrapedImages(prev => ({ ...prev, [target.name]: img }));
-                        }
-                    } catch (e) {
-                        console.error("Scrape error", e);
+                if (!url) throw new Error("No URL"); // Should be filtered out but just in case
+
+                const img = await scrapeProfileImage(url);
+
+                if (img) {
+                    setScrapedImages(prev => ({ ...prev, [name]: img }));
+                    // Success! No need to update orchestraStates as it's removed from candidates
+                } else {
+                    throw new Error("No image found (null result)");
+                }
+            } catch (e) {
+                console.error(`Scrape failed for ${name} (Round ${state.round}, Attempt ${state.failuresInRound + 1}):`, e);
+
+                // Handle Logic:
+                // Round 1: "lo intentas 2 veces" -> Max 2 attempts
+                // Round 2: "una vez mas" -> Max 1 attempt
+                // Round 3: "así hasta hacer una tercera vuelta" -> Max 1 attempt (implied)
+
+                let maxAttempts = 1;
+                if (state.round === 1) maxAttempts = 2;
+
+                const newFailures = state.failuresInRound + 1;
+                let newRound = state.round;
+                let newPermanentFailure = false;
+                let resetFailures = newFailures;
+
+                if (newFailures >= maxAttempts) {
+                    // Exhausted attempts for this round -> Promote to next round
+                    newRound += 1;
+                    resetFailures = 0;
+
+                    if (newRound > 3) {
+                        newPermanentFailure = true; // Give up after conservation
                     }
                 }
+                // If attempts < max, we stay in same round. 
+                // Since we sort by Round ASC, this orchestra remains at top priority 
+                // and will be retried immediately in next loop (satisfying "intentalo 2 veces")
+
+                setOrchestraStates(prev => ({
+                    ...prev,
+                    [name]: {
+                        round: newRound,
+                        failuresInRound: resetFailures,
+                        permanentFailure: newPermanentFailure
+                    }
+                }));
+            } finally {
+                setIsProcessing(false); // Trigger next loop
             }
         };
 
-        triggerScraping();
-    }, [formaciones, scrapedImages, scrapedOrchestras]);
+        processNext();
+    }, [formaciones, scrapedImages, orchestraStates, isProcessing]);
 
     const filteredFormaciones = formaciones.filter(f =>
         f.name.toLowerCase().includes(searchTerm.toLowerCase())
