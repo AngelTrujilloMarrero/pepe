@@ -80,15 +80,16 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
             const sortedDayEvents = sortEventsByDateTime(dayEvents);
 
             return (
-              <div key={dayKey} className="space-y-4">
-                <div className="border-l-4 border-yellow-400 pl-6 py-2 bg-gradient-to-r from-yellow-400/10 to-transparent">
-                  <h3 className="text-xl md:text-2xl font-bold text-yellow-400 flex items-center gap-2">
-                    <Calendar className="w-6 h-6" />
-                    {dayName}
+              <div key={dayKey} className={`space-y-4 ${dayKey !== Object.keys(eventsByDay).sort()[0] ? 'mt-8 pt-4 border-t border-gray-700/30' : ''}`}>
+                <div className="py-3 bg-gradient-to-r from-transparent via-yellow-400/15 to-transparent border-y border-yellow-400/20">
+                  <h3 className="text-xl md:text-2xl font-bold text-yellow-400 flex items-center justify-center gap-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                    <Calendar className="w-6 h-6 animate-pulse text-yellow-500" />
+                    <span className="tracking-wide uppercase">{dayName}</span>
+                    <Calendar className="w-6 h-6 animate-pulse text-yellow-500" />
                   </h3>
                 </div>
 
-                <div className="space-y-3 ml-6">
+                <div className="space-y-3">
                   {sortedDayEvents.map((event) => (
                     <div
                       key={event.id}

@@ -533,21 +533,48 @@ const EventosPage: React.FC<EventosPageProps> = ({ events, recentActivity }) => 
             generationDate.textContent = `Generado ${new Date().toLocaleString('es-ES')}`;
             contentDiv.appendChild(generationDate);
 
-            const festivalHeader = document.createElement('h2');
+            const festivalHeader = document.createElement('div');
+            const randomRotation = (Math.random() * 2 - 1).toFixed(2);
+            const randomHue = Math.floor(Math.random() * 360);
+            const randomBgColor = `hsla(${randomHue}, 70%, 50%, 0.8)`;
+
             festivalHeader.style.cssText = `
-            color: #330000;
-            font-weight: bold;
-            text-decoration: underline;
-            text-decoration-color: #330000;
-            margin-bottom: 10px;
-            font-size: 3em;
-            font-family: Impact, sans-serif;
-            text-shadow: -2px -2px 0 yellow, 2px 2px 0 gold;
-            border: 6px solid #000000;
-            background-color: rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.7);
-            padding: 2px 5px 5px 5px;
-        `;
-            festivalHeader.textContent = lugar ? `VERBENAS ${lugar.toUpperCase()}-${municipio.toUpperCase()}` : `VERBENAS ${municipio.toUpperCase()}`;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: #ffffff;
+                font-weight: bold;
+                margin-bottom: 25px;
+                font-family: Impact, sans-serif;
+                text-shadow: 4px 4px 0px rgba(0,0,0,0.8);
+                border: 5px solid #ffffff;
+                background: ${randomBgColor};
+                padding: 20px 40px;
+                border-radius: 40px;
+                transform: rotate(${randomRotation}deg);
+                box-shadow: 12px 12px 25px rgba(0,0,0,0.5), inset 0 0 60px rgba(255,255,255,0.3);
+                width: auto;
+                max-width: 95%;
+                letter-spacing: 2px;
+                line-height: 1.1;
+                text-align: center;
+            `;
+
+            const createHeaderLine = (text: string, baseSize: number) => {
+                const line = document.createElement('div');
+                line.textContent = text;
+                line.style.whiteSpace = 'nowrap';
+                line.style.fontSize = `${baseSize}em`;
+                return line;
+            };
+
+            if (lugar) {
+                festivalHeader.appendChild(createHeaderLine(`VERBENAS ${lugar.toUpperCase()}`, 3.5));
+                festivalHeader.appendChild(createHeaderLine(municipio.toUpperCase(), 2.8));
+            } else {
+                festivalHeader.appendChild(createHeaderLine(`VERBENAS ${municipio.toUpperCase()}`, 3.5));
+            }
             contentDiv.appendChild(festivalHeader);
 
             festivalEvents.sort((a, b) => new Date(`${a.day}T${a.hora}`).getTime() - new Date(`${b.day}T${b.hora}`).getTime());
@@ -689,18 +716,42 @@ const EventosPage: React.FC<EventosPageProps> = ({ events, recentActivity }) => 
                 fontSizeMultiplier = Math.max(fontSizeMultiplier, 0.7);
                 fontSizeMultiplier = Math.min(fontSizeMultiplier, 2);
 
-                festivalHeader.style.fontSize = `${3 * fontSizeMultiplier}em`;
-                Array.from(contentDiv.querySelectorAll('h3')).forEach(dayHeader => {
-                    (dayHeader as HTMLElement).style.fontSize = `${(totalEvents >= COLUMN_THRESHOLD ? 1.8 : 2) * fontSizeMultiplier}em`;
-                });
-                Array.from(contentDiv.querySelectorAll('p')).forEach(paragraph => {
-                    (paragraph as HTMLElement).style.fontSize = `${(totalEvents >= COLUMN_THRESHOLD ? 1.3 : 1.5) * fontSizeMultiplier}em`;
+                // 1. Ajuste general de escala basado en el volumen de contenido
+                Array.from(contentDiv.querySelectorAll('h3')).forEach(h3 => {
+                    const baseSize = totalEvents >= COLUMN_THRESHOLD ? 1.8 : 2.2;
+                    (h3 as HTMLElement).style.fontSize = `${baseSize * fontSizeMultiplier}em`;
                 });
 
+                // Solo aplicar a los párrafos que son eventos (dentro de eventsContainer)
+                Array.from(eventsContainer.querySelectorAll('p')).forEach(p => {
+                    const baseSize = totalEvents >= COLUMN_THRESHOLD ? 1.3 : 1.6;
+                    (p as HTMLElement).style.fontSize = `${baseSize * fontSizeMultiplier}em`;
+                    (p as HTMLElement).style.lineHeight = "1.4";
+                });
+
+                // 2. Ajuste del titular: escalar según el contenido y reducir si desborda el ancho
+                Array.from(festivalHeader.children).forEach((line) => {
+                    const el = line as HTMLElement;
+                    let currentFontSize = parseFloat(el.style.fontSize);
+
+                    // Aplicamos el multiplicador para que crezca si hay poco contenido
+                    currentFontSize *= fontSizeMultiplier;
+                    el.style.fontSize = `${currentFontSize}em`;
+
+                    const containerMaxWidth = 1100;
+                    // Reducir tamaño de fuente solo si quepa en una línea (evitar desborde horizontal)
+                    while (el.scrollWidth > containerMaxWidth && currentFontSize > 0.5) {
+                        currentFontSize -= 0.1;
+                        el.style.fontSize = `${currentFontSize}em`;
+                    }
+                });
+
+                // 3. Centrado vertical y espaciado proporcional
                 contentDiv.style.minHeight = `${minRequiredHeight}px`;
                 contentDiv.style.display = 'flex';
                 contentDiv.style.flexDirection = 'column';
                 contentDiv.style.justifyContent = 'center';
+                contentDiv.style.gap = `${20 * fontSizeMultiplier}px`;
 
                 html2canvas(tempContainer, {
                     width: 1200,
@@ -763,29 +814,41 @@ const EventosPage: React.FC<EventosPageProps> = ({ events, recentActivity }) => 
 
             {/* Festival Selection Modal */}
             {festivalSelectionVisible && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
-                        <h3 className="text-xl font-bold mb-4 text-gray-800">Seleccionar Fiesta para Exportar</h3>
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[110] p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h3 className="text-xl md:text-2xl font-bold mb-6 text-gray-800 text-center">
+                            Exportar Fiesta
+                        </h3>
 
                         {getUniqueFestivals().length > 0 ? (
                             <>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Selecciona una fiesta:
+                                <div className="mb-8">
+                                    <label className="block text-sm font-semibold text-gray-600 mb-3 text-center">
+                                        Selecciona una fiesta de la lista:
                                     </label>
                                     <Select
                                         value={selectedFestival}
                                         onValueChange={setSelectedFestival}
                                     >
-                                        <SelectTrigger className="w-full bg-white border-gray-300">
-                                            <SelectValue placeholder="-- Selecciona una fiesta --" />
+                                        <SelectTrigger className="w-full bg-gray-50 border-gray-200 h-12 text-gray-800 focus:ring-2 focus:ring-blue-500 rounded-xl">
+                                            <SelectValue placeholder="Toca para ver las fiestas..." />
                                         </SelectTrigger>
-                                        <SelectContent viewportClassName="md:grid md:grid-cols-2 md:gap-x-4">
-                                            {getUniqueFestivals().map((festival, index) => (
-                                                <SelectItem key={index} value={JSON.stringify(festival)}>
-                                                    Verbenas de {festival.label}
-                                                </SelectItem>
-                                            ))}
+                                        <SelectContent
+                                            position="item-aligned"
+                                            className="z-[120] min-w-[320px] md:min-w-[700px] border-zinc-200 shadow-2xl"
+                                            viewportClassName="max-h-[60vh] md:max-h-[500px] overflow-y-auto"
+                                        >
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1 p-1">
+                                                {getUniqueFestivals().map((festival, index) => (
+                                                    <SelectItem
+                                                        key={index}
+                                                        value={JSON.stringify(festival)}
+                                                        className="py-3 px-4 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
+                                                    >
+                                                        <span className="font-medium text-sm">Verbenas de {festival.label}</span>
+                                                    </SelectItem>
+                                                ))}
+                                            </div>
                                         </SelectContent>
                                     </Select>
                                 </div>

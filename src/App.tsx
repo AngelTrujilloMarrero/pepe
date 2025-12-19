@@ -41,7 +41,7 @@ function App() {
       <footer className="bg-gray-900 text-white py-8 blurred-bg">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-300">
-            © 2025 De Belingo Con Ángel - Verbenas en Tenerife
+            © {new Date().getFullYear()} De Belingo Con Ángel - Verbenas en Tenerife
           </p>
           <p className="text-gray-400 text-sm mt-2">
             Desarrollado con 💙 para la comunidad de Tenerife
