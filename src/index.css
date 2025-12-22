@@ -278,14 +278,17 @@
 }
 
 .gradient-text-wave {
-  will-change: background-position;
   background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
   background-size: 200% 200%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: gradient-shift 3s ease infinite;
   display: inline-block;
+  transition: filter 0.3s ease;
+}
+
+.group\/text:hover .gradient-text-wave {
+  animation: gradient-shift 3s ease infinite;
 }
 
 /* Animación fadeIn para análisis de orquestas */

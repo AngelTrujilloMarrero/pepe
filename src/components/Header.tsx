@@ -11,20 +11,12 @@ const Header: React.FC = () => {
     if (!header) return;
 
     let rafId: number | null = null;
-    let rect = header.getBoundingClientRect();
-
-    const updateRect = () => {
-      rect = header.getBoundingClientRect();
-    };
-
-    // Update rect on resize and scroll to ensure accuracy
-    window.addEventListener('resize', updateRect, { passive: true });
-    window.addEventListener('scroll', updateRect, { passive: true });
 
     const handleMouseMove = (e: MouseEvent) => {
       if (rafId) return;
 
       rafId = requestAnimationFrame(() => {
+        const rect = header.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         header.style.setProperty('--mouse-x', `${x}px`);
@@ -37,8 +29,6 @@ const Header: React.FC = () => {
 
     return () => {
       header.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', updateRect);
-      window.removeEventListener('scroll', updateRect);
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
@@ -46,33 +36,22 @@ const Header: React.FC = () => {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-50 text-white shadow-lg flex flex-col justify-center items-center cursor-default group transition-all duration-300"
+      className="sticky top-0 z-50 text-white shadow-lg flex flex-col justify-center items-center cursor-default group transition-all duration-300 bg-[#001f3f] overflow-hidden"
     >
-      {/* Background Layers */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Base Blurred Image */}
+      {/* Background Layers - Optimized */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Base Image with subtle overlay */}
         <div
-          className="absolute inset-0 bg-[url('/eltablero.jpg')] bg-cover bg-center blur-[2px] scale-110"
+          className="absolute inset-0 bg-[url('/eltablero.jpg')] bg-cover bg-center opacity-40"
         />
-
-        {/* Unblurred Reveal Layer */}
-        <div
-          className="absolute inset-0 bg-[url('/eltablero.jpg')] bg-cover bg-center scale-110 transition-opacity duration-300"
-          style={{
-            maskImage: `radial-gradient(160px circle at var(--mouse-x) var(--mouse-y), black, transparent)`,
-            WebkitMaskImage: `radial-gradient(160px circle at var(--mouse-x) var(--mouse-y), black, transparent)`,
-          }}
-        />
-
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
       </div>
 
-      {/* Spotlight Effect (Intensified) */}
+      {/* Spotlight Effect (Simplified) */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style={{
-          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.3), transparent 40%)`,
+          background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.15), transparent 80%)`,
           zIndex: 5
         }}
       />
