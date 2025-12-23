@@ -1,10 +1,34 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Instagram, Facebook, MessageCircle, Send } from 'lucide-react';
 import DBCALogo from './DBCALogo';
 import Navigation from './Navigation';
 
 const Header: React.FC = () => {
   const headerRef = useRef<HTMLElement>(null);
+  const location = useLocation();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const isEventosPage = location.pathname === '/';
+
+  useEffect(() => {
+    if (!isEventosPage) {
+      setIsScrolled(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollPos = window.scrollY;
+
+      if (scrollPos > 150) {
+        if (!isScrolled) setIsScrolled(true);
+      } else if (scrollPos < 30) {
+        if (isScrolled) setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isScrolled, isEventosPage]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -15,23 +39,33 @@ const Header: React.FC = () => {
     e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
   };
 
+  // Header sizing logic
+  // Full: isEventosPage && !isScrolled
+  // Compact (Auto-compress): isEventosPage && isScrolled
+  // Reduced (30% less): !isEventosPage
+
+  const headerClasses = isEventosPage
+    ? (isScrolled ? 'py-1 backdrop-blur-md bg-[#001f3f]/90' : 'py-2 lg:py-4')
+    : 'py-1 lg:py-1.5 bg-[#001f3f]/95';
+
   return (
     <header
       ref={headerRef}
       onMouseMove={handleMouseMove}
-      className="sticky top-0 z-50 text-white shadow-lg flex flex-col justify-center items-center cursor-default group transition-all duration-300 bg-[#001f3f] overflow-hidden"
+      className={`sticky top-0 z-50 text-white shadow-xl flex flex-col justify-center items-center cursor-default group transition-all duration-500 ease-in-out bg-[#001f3f] ${headerClasses}`}
+      style={{ overflow: 'visible' }}
     >
       {/* Background Layers - Optimized */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Base Image with subtle overlay */}
         <div
-          className="absolute inset-0 bg-[url('/eltablero.jpg')] bg-cover bg-center opacity-40"
+          className={`absolute inset-0 bg-[url('/eltablero.jpg')] bg-cover bg-center transition-opacity duration-700 ${(isEventosPage && isScrolled) || !isEventosPage ? 'opacity-20' : 'opacity-40'
+            }`}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
       </div>
 
-      {/* Spotlight Effect (Optimized with transform) */}
-      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      {/* Spotlight Effect - Hidden when scrolled or in other pages to save CPU */}
+      <div className={`absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${(isEventosPage && isScrolled) || !isEventosPage ? 'hidden' : ''}`}>
         <div
           className="absolute w-[800px] h-[800px] -left-[400px] -top-[400px]"
           style={{
@@ -43,11 +77,15 @@ const Header: React.FC = () => {
         />
       </div>
 
-      <div className="relative container mx-auto px-4 text-center flex flex-col justify-between z-10 py-4 lg:py-6 gap-3 lg:gap-5">
-        {/* Top section with Logo and Social Icons */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 lg:gap-8 w-full relative">
+      <div className={`relative container mx-auto px-4 text-center flex flex-col items-center justify-center z-10 transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'gap-0 py-1' : (!isEventosPage ? 'gap-0 py-0.5' : 'py-6 lg:py-8 gap-3 lg:gap-5')
+        }`}
+        style={{ overflow: 'visible' }}
+      >
 
-          <div className="flex items-center gap-2 sm:gap-6 md:gap-8 lg:gap-12">
+        {/* Top section with Logo and Social Icons */}
+        <div className={`flex flex-col items-center justify-center w-full relative transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'max-h-0 opacity-0 pointer-events-none mb-0 overflow-hidden' : 'max-h-[250px] opacity-100 mb-1 overflow-visible'
+          }`}>
+          <div className={`flex items-center gap-2 sm:gap-6 md:gap-8 lg:gap-12 transition-all duration-500 ${!isEventosPage ? 'scale-[0.55] -my-2' : 'py-2'}`}>
             {/* Social Icons Left Group */}
             <div className="flex items-center gap-1.5 sm:gap-3">
               <a href="https://www.instagram.com/debelingoconangel/" target="_blank" rel="noopener noreferrer" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
@@ -59,7 +97,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Logo Grouped in the middle of icons */}
-            <div className="transform scale-[0.45] xs:scale-[0.5] sm:scale-[0.55] md:scale-[0.65] lg:scale-[0.75] transition-transform duration-300 -my-4 sm:-my-4 md:-my-5 relative z-20">
+            <div className="transform scale-[0.45] xs:scale-[0.5] sm:scale-[0.55] md:scale-[0.65] lg:scale-[0.75] transition-transform duration-300 relative z-20">
               <DBCALogo />
             </div>
 
@@ -75,10 +113,10 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Group Title and Navigation */}
-        <div className="w-full flex flex-col items-center gap-2 md:gap-3">
-          {/* Main Title & Subtitle */}
-          <div className="hidden md:block">
+        {/* Group Title */}
+        <div className={`w-full flex flex-col items-center transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'max-h-0 opacity-0 pointer-events-none mb-0 overflow-hidden' : 'max-h-40 opacity-100 mb-1 overflow-visible'
+          }`}>
+          <div className={`hidden md:block transition-all duration-500 ${!isEventosPage ? 'scale-[0.75] -my-1' : ''}`}>
             <h1 className="text-xl md:text-2xl lg:text-4xl font-bold font-orbitron tracking-widest transform scale-x-110 origin-center inline-block group/text cursor-pointer transition-transform duration-300 hover:scale-125 py-2 perspective-[1000px]">
               {"DE BELINGO CON ÁNGEL".split('').map((char, index) => (
                 <span
@@ -90,23 +128,21 @@ const Header: React.FC = () => {
                 </span>
               ))}
             </h1>
-            <p className="text-sm md:text-base lg:text-lg font-semibold text-blue-100 animate-fade-in mt-1">
+            <p className={`text-sm md:text-base lg:text-lg font-semibold text-blue-100 animate-fade-in ${!isEventosPage ? 'hidden' : 'mt-1'}`}>
               Verbenas en Tenerife
             </p>
           </div>
-
-          {/* Navigation */}
-          <div className="w-full flex justify-center">
-            <Navigation />
-          </div>
         </div>
 
-        {/* Decorative elements are removed to save space */}
+        {/* Navigation - ALWAYS VISIBLE */}
+        <div className={`w-full flex justify-center transition-all duration-500 ${isEventosPage && isScrolled ? 'py-1 scale-95 origin-center' : (!isEventosPage ? 'py-0.5 scale-90' : 'py-2')
+          }`}>
+          <Navigation />
+        </div>
       </div>
-
-      {/* Bottom gradient is removed as it's not needed with the new structure */}
     </header>
   );
 };
 
 export default Header;
+

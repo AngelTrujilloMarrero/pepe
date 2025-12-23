@@ -4,8 +4,8 @@
 @layer base {
   :root {
     scroll-behavior: smooth;
-    scroll-padding-top: 10rem;
-    /* Adjust as needed */
+    scroll-padding-top: 7rem;
+    /* Adjusted for the new compact header */
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
