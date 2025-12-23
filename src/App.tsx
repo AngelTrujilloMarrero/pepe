@@ -1,12 +1,18 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import { useEvents } from './hooks/useEvents';
 import { Loader2 } from 'lucide-react';
 import { EventosPage, MapaPage, EstadisticasPage, RedesPage, FormacionesPage } from './pages';
+import { useEffect } from 'react';
 
 function App() {
   const { events, recentActivity, loading } = useEvents();
+  const { pathname } = useLocation();
+
+  // Automatically scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   if (loading) {
     return (

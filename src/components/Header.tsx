@@ -135,7 +135,9 @@ const Header: React.FC = () => {
         </div>
 
         {/* Navigation - ALWAYS VISIBLE */}
-        <div className={`w-full flex justify-center transition-all duration-500 ${isEventosPage && isScrolled ? 'py-1 scale-95 origin-center' : (!isEventosPage ? 'py-0.5 scale-90' : 'py-2')
+        <div className={`w-full flex justify-center transition-all duration-500 ${isEventosPage && isScrolled
+          ? 'py-2.5 sm:py-1 scale-100 sm:scale-95 origin-center'
+          : (!isEventosPage ? 'py-0.5 scale-90' : 'py-2')
           }`}>
           <Navigation />
         </div>
