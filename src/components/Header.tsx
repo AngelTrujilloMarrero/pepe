@@ -44,9 +44,10 @@ const Header: React.FC = () => {
   // Compact (Auto-compress): isEventosPage && isScrolled
   // Reduced (30% less): !isEventosPage
 
+  // Header sizing logic - Final 20% reduction
   const headerClasses = isEventosPage
-    ? (isScrolled ? 'py-1 backdrop-blur-md bg-[#001f3f]/90' : 'py-2 lg:py-4')
-    : 'py-1 lg:py-1.5 bg-[#001f3f]/95';
+    ? (isScrolled ? 'py-1 backdrop-blur-md bg-[#001f3f]/90' : 'py-1.5 lg:py-3')
+    : 'py-1 lg:py-1 bg-[#001f3f]/95';
 
   return (
     <header
@@ -77,47 +78,47 @@ const Header: React.FC = () => {
         />
       </div>
 
-      <div className={`relative container mx-auto px-4 text-center flex flex-col items-center justify-center z-10 transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'gap-0 py-1' : (!isEventosPage ? 'gap-0 py-0.5' : 'py-6 lg:py-8 gap-3 lg:gap-5')
+      <div className={`relative container mx-auto px-4 text-center flex flex-col items-center justify-center z-10 transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'gap-0 py-2' : (!isEventosPage ? 'gap-0 py-0' : 'py-4 lg:py-6 gap-2 lg:gap-4')
         }`}
         style={{ overflow: 'visible' }}
       >
 
         {/* Top section with Logo and Social Icons */}
-        <div className={`flex flex-col items-center justify-center w-full relative transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'max-h-0 opacity-0 pointer-events-none mb-0 overflow-hidden' : 'max-h-[250px] opacity-100 mb-1 overflow-visible'
+        <div className={`flex flex-col items-center justify-center w-full relative transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'max-h-0 opacity-0 pointer-events-none mb-0 overflow-hidden' : 'max-h-[200px] opacity-100 mb-0.5 overflow-visible'
           }`}>
-          <div className={`flex items-center gap-2 sm:gap-6 md:gap-8 lg:gap-12 transition-all duration-500 ${!isEventosPage ? 'scale-[0.55] -my-2' : 'py-2'}`}>
+          <div className={`flex items-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 transition-all duration-500 ${!isEventosPage ? 'scale-[0.45]' : 'py-1'}`}>
             {/* Social Icons Left Group */}
-            <div className="flex items-center gap-1.5 sm:gap-3">
-              <a href="https://www.instagram.com/debelingoconangel/" target="_blank" rel="noopener noreferrer" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
-                <Instagram className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <a href="https://www.instagram.com/debelingoconangel/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 sm:w-7 sm:h-7 lg:w-9 lg:h-9 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+                <Instagram className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4.5 lg:h-4.5 text-white" />
               </a>
-              <a href="https://www.facebook.com/debelingoconangel/" target="_blank" rel="noopener noreferrer" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
-                <Facebook className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
+              <a href="https://www.facebook.com/debelingoconangel/" target="_blank" rel="noopener noreferrer" className="w-6 h-6 sm:w-7 sm:h-7 lg:w-9 lg:h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+                <Facebook className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4.5 lg:h-4.5 text-white" />
               </a>
             </div>
 
             {/* Logo Grouped in the middle of icons */}
-            <div className="transform scale-[0.45] xs:scale-[0.5] sm:scale-[0.55] md:scale-[0.65] lg:scale-[0.75] transition-transform duration-300 relative z-20">
+            <div className="transform scale-[0.4] xs:scale-[0.45] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.7] transition-transform duration-300 relative z-20">
               <DBCALogo />
             </div>
 
             {/* Social Icons Right Group */}
-            <div className="flex items-center gap-1.5 sm:gap-3">
-              <a href="https://www.whatsapp.com/channel/0029Va8nc2A77qVZokI0aC2K" target="_blank" rel="noopener noreferrer" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
-                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <a href="https://www.whatsapp.com/channel/0029Va8nc2A77qVZokI0aC2K" target="_blank" rel="noopener noreferrer" className="w-6 h-6 sm:w-7 sm:h-7 lg:w-9 lg:h-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+                <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4.5 lg:h-4.5 text-white" />
               </a>
-              <a href="https://t.me/debelingoconangel" target="_blank" rel="noopener noreferrer" className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
-                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
+              <a href="https://t.me/debelingoconangel" target="_blank" rel="noopener noreferrer" className="w-6 h-6 sm:w-7 sm:h-7 lg:w-9 lg:h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+                <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4.5 lg:h-4.5 text-white" />
               </a>
             </div>
           </div>
         </div>
 
         {/* Group Title */}
-        <div className={`w-full flex flex-col items-center transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'max-h-0 opacity-0 pointer-events-none mb-0 overflow-hidden' : 'max-h-40 opacity-100 mb-1 overflow-visible'
+        <div className={`w-full flex flex-col items-center transition-all duration-500 ease-in-out ${isEventosPage && isScrolled ? 'max-h-0 opacity-0 pointer-events-none mb-0 overflow-hidden' : 'max-h-32 opacity-100 mb-0.5 overflow-visible'
           }`}>
-          <div className={`hidden md:block transition-all duration-500 ${!isEventosPage ? 'scale-[0.75] -my-1' : ''}`}>
-            <h1 className="text-xl md:text-2xl lg:text-4xl font-bold font-orbitron tracking-widest transform scale-x-110 origin-center inline-block group/text cursor-pointer transition-transform duration-300 hover:scale-125 py-2 perspective-[1000px]">
+          <div className={`hidden md:block transition-all duration-500 ${!isEventosPage ? 'scale-[0.65]' : ''}`}>
+            <h1 className="text-lg md:text-xl lg:text-3xl font-bold font-orbitron tracking-widest transform scale-x-110 origin-center inline-block group/text cursor-pointer transition-transform duration-300 hover:scale-125 py-1 perspective-[1000px]">
               {"DE BELINGO CON ÁNGEL".split('').map((char, index) => (
                 <span
                   key={index}
@@ -128,7 +129,7 @@ const Header: React.FC = () => {
                 </span>
               ))}
             </h1>
-            <p className={`text-sm md:text-base lg:text-lg font-semibold text-blue-100 animate-fade-in ${!isEventosPage ? 'hidden' : 'mt-1'}`}>
+            <p className={`text-xs md:text-sm lg:text-base font-semibold text-blue-100 animate-fade-in ${!isEventosPage ? 'hidden' : 'mt-0.5'}`}>
               Verbenas en Tenerife
             </p>
           </div>
@@ -136,8 +137,8 @@ const Header: React.FC = () => {
 
         {/* Navigation - ALWAYS VISIBLE */}
         <div className={`w-full flex justify-center transition-all duration-500 ${isEventosPage && isScrolled
-          ? 'py-2.5 sm:py-1 scale-100 sm:scale-95 origin-center'
-          : (!isEventosPage ? 'py-0.5 scale-90' : 'py-2')
+          ? 'py-2 sm:py-1 scale-100 sm:scale-95 origin-center'
+          : (!isEventosPage ? 'py-0.5 scale-85' : 'py-1.5')
           }`}>
           <Navigation />
         </div>
