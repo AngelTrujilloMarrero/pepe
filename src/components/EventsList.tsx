@@ -62,7 +62,7 @@ const EventsList: React.FC<EventsListProps> = ({ events, recentActivity, onExpor
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white rounded-2xl shadow-2xl overflow-hidden">
+    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
         <h2 className="text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-3">

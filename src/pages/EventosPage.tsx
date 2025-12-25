@@ -808,7 +808,7 @@ const EventosPage: React.FC<EventosPageProps> = ({ events, recentActivity }) => 
                 onExportFestival={showFestivalSelection}
             />
 
-            <div className="mt-8 mb-4">
+            <div className="container mx-auto px-4 mt-8 mb-4">
                 <VisitCounter />
             </div>
 
