@@ -3,6 +3,8 @@ import { Event } from '../types';
 import { orchestraDetails } from '../data/orchestras';
 import { Instagram, Facebook, Globe, Mail, Phone, Search, Music, Users, ExternalLink } from 'lucide-react';
 import { onValue, orchestrasRef } from '../utils/firebase';
+import { scrapeProfileImage } from '../utils/socialScraper';
+import OrquestaAnalysis from '../components/OrquestaAnalysis';
 
 interface FormacionesPageProps {
     events: Event[];
@@ -11,6 +13,8 @@ interface FormacionesPageProps {
 const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [dbOrchestras, setDbOrchestras] = useState<Record<string, any>>({});
+    const [scrapedImages, setScrapedImages] = useState<Record<string, string>>({});
+    const [selectedOrquesta, setSelectedOrquesta] = useState<string | null>(null);
 
     useEffect(() => {
         const unsubscribe = onValue(orchestrasRef, (snapshot) => {
@@ -85,8 +89,35 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
         f.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleDoubleClick = async (formacion: any) => {
+        setSelectedOrquesta(formacion.name);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Trigger scraping if image is missing
+        if (!formacion.image && !scrapedImages[formacion.name]) {
+            const url = formacion.facebook || formacion.instagram;
+            if (url) {
+                try {
+                    const img = await scrapeProfileImage(url);
+                    if (img) {
+                        setScrapedImages(prev => ({ ...prev, [formacion.name]: img }));
+                    }
+                } catch (e) {
+                    console.error("Manual scrape failed:", e);
+                }
+            }
+        }
+    };
+
     const currentYear = new Date().getFullYear();
     const prevYear = currentYear - 1;
+
+    // Map formaciones for OrquestaAnalysis ranking (using previous year as requested)
+    const rankingData = useMemo(() => {
+        return formaciones
+            .map(f => ({ name: f.name, count: f.prevCount }))
+            .sort((a, b) => b.count - a.count);
+    }, [formaciones]);
 
     return (
         <div className="space-y-8 animate-fadeIn">
@@ -97,6 +128,9 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
                 </h1>
                 <p className="text-gray-400 max-w-2xl mx-auto text-lg">
                     Descubre los perfiles, contacto y redes sociales de las orquestas que dan vida a las verbenas de Canarias.
+                </p>
+                <p className="text-purple-400/80 text-sm italic">
+                    💡 Haz doble clic en el nombre de una orquesta para ver análisis detallado del año {prevYear} y cargar su imagen.
                 </p>
 
                 {/* Search Bar */}
@@ -115,32 +149,64 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
                 </div>
             </div>
 
+            {/* Analysis Component - Modal-like top position if selected */}
+            {selectedOrquesta && (
+                <div className="mb-12 animate-fadeInUp">
+                    <OrquestaAnalysis
+                        orquesta={selectedOrquesta}
+                        events={events}
+                        position={rankingData.findIndex(o => o.name === selectedOrquesta)}
+                        totalOrquestas={rankingData}
+                        selectedYear={prevYear}
+                        onClose={() => setSelectedOrquesta(null)}
+                    />
+                </div>
+            )}
+
             {/* Grid de Formaciones */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredFormaciones.map((formacion, index) => {
+                    const displayImage = formacion.image || scrapedImages[formacion.name];
+
                     return (
                         <div
                             key={formacion.name}
-                            className="group relative bg-gray-900/80 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all duration-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:-translate-y-2"
+                            className={`group relative bg-gray-900/80 backdrop-blur-md border rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:-translate-y-2 ${selectedOrquesta === formacion.name ? 'border-purple-500 ring-2 ring-purple-500/50' : 'border-white/10'
+                                }`}
                         >
                             {/* Header / Cover Placeholder */}
                             <div className={`h-32 relative flex items-center justify-center overflow-hidden transition-all duration-500`}>
-                                <div className={`absolute inset-0 bg-gradient-to-br ${getGradient(index)}`} />
+                                {displayImage ? (
+                                    <img
+                                        src={displayImage}
+                                        alt={formacion.name}
+                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    />
+                                ) : (
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${getGradient(index)}`} />
+                                )}
 
                                 {/* Overlay */}
-                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500" />
+                                <div className={`absolute inset-0 transition-colors duration-500 ${displayImage ? 'bg-black/40 group-hover:bg-black/30' : 'bg-black/20 group-hover:bg-black/40'}`} />
 
                                 {/* Logo / Initials */}
-                                <div className="relative z-10 w-20 h-20 rounded-full bg-gray-900 border-4 border-gray-800 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
-                                    <span className="text-2xl font-bold text-white">
-                                        {getInitials(formacion.name)}
-                                    </span>
+                                <div className="relative z-10 w-20 h-20 rounded-full bg-gray-900 border-4 border-gray-800 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                                    {displayImage ? (
+                                        <img src={displayImage} alt={formacion.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-2xl font-bold text-white">
+                                            {getInitials(formacion.name)}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Content */}
                             <div className="p-6 text-center space-y-4">
-                                <div>
+                                <div
+                                    onDoubleClick={() => handleDoubleClick(formacion)}
+                                    className="cursor-pointer select-none"
+                                >
                                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors drop-shadow-md">
                                         {formacion.name}
                                     </h3>

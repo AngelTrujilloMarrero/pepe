@@ -54,7 +54,7 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  const showAnalysis = selectedYear < currentYear || (selectedYear === currentYear && currentMonth >= 5);
+  const showAnalysis = selectedYear < currentYear || (selectedYear === currentYear && currentMonth >= 3);
 
   const toggleMonth = (month: string) => {
     setExpandedMonths(prev => ({
@@ -224,8 +224,10 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
   };
 
   const currentYearChartData = createChartData(currentYearData);
+  const prevYearForAnalysis = new Date().getFullYear() - 1;
+
   const selectedOrquestaPosition = selectedOrquesta
-    ? sortedOrquestasList.findIndex(o => o.name === selectedOrquesta)
+    ? fullSortedOrquestasList.findIndex(o => o.name === selectedOrquesta)
     : -1;
 
   return (
@@ -265,7 +267,7 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
             </p>
           ) : (
             <p className="text-center text-yellow-200 mt-2 text-sm">
-              📊 El análisis detallado estará disponible a partir de junio
+              📊 El análisis detallado estará disponible a partir de abril
             </p>
           )}
         </div>
@@ -299,8 +301,8 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
                       orquesta={selectedOrquesta}
                       events={events}
                       position={selectedOrquestaPosition}
-                      totalOrquestas={sortedOrquestasList}
-                      selectedYear={selectedYear}
+                      totalOrquestas={fullSortedOrquestasList}
+                      selectedYear={showAnalysis && selectedYear === currentYear ? currentYear : prevYearForAnalysis}
                       onClose={() => setSelectedOrquesta(null)}
                     />
                   )}
@@ -451,7 +453,14 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
           <div className="p-6 animate-fadeIn">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
               {fullSortedOrquestasList.slice(0, visibleItems).map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all cursor-default group">
+                <div
+                  key={item.name}
+                  onClick={() => {
+                    setSelectedOrquesta(prev => prev === item.name ? null : item.name);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5 hover:bg-white/10 hover:border-blue-500/30 transition-all cursor-pointer group"
+                >
                   <div className="flex items-center gap-2 overflow-hidden min-w-0">
                     <span className={`
                                     w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md text-[10px] sm:text-xs font-bold
