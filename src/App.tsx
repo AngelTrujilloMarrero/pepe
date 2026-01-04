@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
+import VisitCounter from './components/VisitCounter';
 import { useEvents } from './hooks/useEvents';
 import { Loader2 } from 'lucide-react';
 import { EventosPage, MapaPage, EstadisticasPage, RedesPage, FormacionesPage } from './pages';
@@ -58,6 +59,9 @@ function App() {
           <p className="text-gray-400 text-sm mt-3 tracking-wide">
             Desarrollado con 💙 para la comunidad de Tenerife
           </p>
+          <div className="mt-8">
+            <VisitCounter />
+          </div>
         </div>
       </footer>
     </div>

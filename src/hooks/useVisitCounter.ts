@@ -12,7 +12,7 @@ export function useVisitCounter() {
         setVisitCount(count);
         await set(visitCountRef, count + 1);
       } catch (error) {
-        console.error('Error al obtener el contador de visitas:', error);
+        console.error('Error al manejar el contador de visitas:', error);
       }
     };
 

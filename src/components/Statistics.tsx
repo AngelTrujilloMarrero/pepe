@@ -489,10 +489,15 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
       {/* Comparativa Interanual */}
       {(() => {
         const monthsOrder = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-        const monthsToRender = monthsOrder.filter(month => {
+        const currentMonthIndex = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const monthsToRender = monthsOrder.filter((month, index) => {
           const hasCurrentData = monthlyData[month] && Object.keys(monthlyData[month]).length > 0;
           const hasPrevData = prevYearMonthlyData[month] && Object.keys(prevYearMonthlyData[month]).length > 0;
-          return hasCurrentData && hasPrevData;
+
+          const isPastOrCurrent = selectedYear < currentYear || index <= currentMonthIndex;
+          return (hasCurrentData || hasPrevData) && isPastOrCurrent;
         });
 
         if (monthsToRender.length === 0) return null;
@@ -517,7 +522,7 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
                   const currentData = monthlyData[month] || {};
                   const prevData = prevYearMonthlyData[month] || {};
                   const allOrquestas = new Set([...Object.keys(currentData), ...Object.keys(prevData)]);
-                  const count = Array.from(allOrquestas).filter(orq => (prevData[orq] || 0) > 0).length;
+                  const count = allOrquestas.size;
 
                   return (
                     <button
@@ -608,7 +613,7 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
                   };
                 }).sort((a, b) => b.current - a.current);
 
-                const visibleRows = comparativaVia.filter(item => item.prev > 0);
+                const visibleRows = comparativaVia.filter(item => item.prev > 0 || item.current > 0);
                 const lostAll = comparativaVia.filter(item => item.prev > 0 && item.current === 0);
                 const significantDrop = comparativaVia.filter(item => item.prev > 0 && item.current > 0 && item.variation <= -50);
 
@@ -647,7 +652,7 @@ const Statistics: React.FC<StatisticsProps> = ({ events }) => {
                                 <td className="py-4 px-4 font-semibold text-gray-100 group-hover/row:text-white">{item.name}</td>
                                 <td className="py-4 px-4 text-right">
                                   <span className={`px-3 py-1 rounded-full text-xs font-black shadow-sm ${item.variation > 0 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                                      item.variation < 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                                    item.variation < 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
                                     }`}>
                                     {item.variation > 0 ? '+' : ''}{item.variation.toFixed(0)}%
                                   </span>

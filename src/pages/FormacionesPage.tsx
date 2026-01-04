@@ -3,7 +3,6 @@ import { Event } from '../types';
 import { orchestraDetails } from '../data/orchestras';
 import { Instagram, Facebook, Globe, Mail, Phone, Search, Music, Users, ExternalLink } from 'lucide-react';
 import { onValue, orchestrasRef } from '../utils/firebase';
-import { scrapeProfileImage } from '../utils/socialScraper';
 
 interface FormacionesPageProps {
     events: Event[];
@@ -12,7 +11,6 @@ interface FormacionesPageProps {
 const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [dbOrchestras, setDbOrchestras] = useState<Record<string, any>>({});
-    const [scrapedImages, setScrapedImages] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const unsubscribe = onValue(orchestrasRef, (snapshot) => {
@@ -26,18 +24,27 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
 
     // Extract unique orchestras and calculate stats
     const formaciones = useMemo(() => {
-        const stats: Record<string, { count: number; lastEvent: string }> = {};
+        const currentYear = new Date().getFullYear();
+        const prevYear = currentYear - 1;
+        const stats: Record<string, { currentCount: number; prevCount: number; lastEvent: string }> = {};
 
         // 1. Calculate stats from events
         events.forEach(event => {
             if (event.cancelado) return;
+            const eventYear = new Date(event.day).getFullYear();
             const orquestas = event.orquesta.split(',').map(o => o.trim()).filter(o => o !== 'DJ' && o.length > 0);
 
             orquestas.forEach(orq => {
                 if (!stats[orq]) {
-                    stats[orq] = { count: 0, lastEvent: event.day };
+                    stats[orq] = { currentCount: 0, prevCount: 0, lastEvent: event.day };
                 }
-                stats[orq].count += 1;
+
+                if (eventYear === currentYear) {
+                    stats[orq].currentCount += 1;
+                } else if (eventYear === prevYear) {
+                    stats[orq].prevCount += 1;
+                }
+
                 if (new Date(event.day) > new Date(stats[orq].lastEvent)) {
                     stats[orq].lastEvent = event.day;
                 }
@@ -58,10 +65,6 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
             .map(([name, stat]) => {
                 const dbInfo = dbOrchestrasMap[name] || {};
 
-                // Construct the consolidated object
-                // Priority: DB > File > Fallback
-                // Note: DB field for other links is 'other' (lowercase), component expects 'Otros' or 'website'
-
                 const consolidated = {
                     name,
                     ...stat,
@@ -72,122 +75,18 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
 
                 // Normalize fields specifically
                 if (dbInfo.other) consolidated.Otros = dbInfo.other;
-                // If website is missing but we have 'other', use 'other' as website too for the Globe icon if desired, 
-                // but we also have a specific block for 'Otros'. 
-                // Let's keep 'Otros' strictly for the ExternalLink icon and 'website' for the Globe icon.
-                // If the DB provides 'website', use it. If not, don't force 'other' into 'website' unless we want to.
-                // Based on previous user request, 'other' was 'Otros'.
 
                 return consolidated;
             })
-            .sort((a, b) => b.count - a.count); // Sort by popularity (event count)
+            .sort((a, b) => b.currentCount - a.currentCount || b.prevCount - a.prevCount);
     }, [events, dbOrchestras]);
-
-    // Scrape images effect
-    // State for managing the robust multi-round scraping process
-    const [orchestraStates, setOrchestraStates] = useState<Record<string, { round: number; failuresInRound: number; permanentFailure: boolean }>>({});
-    const [isProcessing, setIsProcessing] = useState(false);
-
-    // Scrape images effect - Robust "Round" System
-    useEffect(() => {
-        if (isProcessing) return; // Prevent concurrent processing
-
-        const processNext = async () => {
-            // 1. Identify all valid candidates that still need an image
-            const candidates = formaciones.filter(f =>
-                f.hasDbInfo &&
-                (f.facebook || f.instagram) &&
-                !f.image &&
-                !scrapedImages[f.name] &&
-                !orchestraStates[f.name]?.permanentFailure
-            );
-
-            if (candidates.length === 0) return;
-
-            // 2. Select priority candidate based on Round
-            // We want to finish all Round 1s before starting Round 2s, etc.
-            const getRound = (name: string) => orchestraStates[name]?.round || 1;
-
-            // Sort: Lowest Round first. Then preserve original order (event count popularity)
-            const sortedCandidates = candidates.sort((a, b) => {
-                const roundA = getRound(a.name);
-                const roundB = getRound(b.name);
-                if (roundA !== roundB) return roundA - roundB;
-                return 0; // Stable sort within same round
-            });
-
-            // 3. Pick the winner
-            const target = sortedCandidates[0];
-            const name = target.name;
-            // Default state is Round 1, 0 failures
-            const state = orchestraStates[name] || { round: 1, failuresInRound: 0, permanentFailure: false };
-
-            setIsProcessing(true);
-
-            try {
-                // "Entre orquesta y orquesta tiene que haber un lapsus de tiempo mínimo"
-                // 1500ms delay between attempts is safe/courteous
-                await new Promise(r => setTimeout(r, 1500));
-
-                const url = target.facebook || target.instagram;
-                if (!url) throw new Error("No URL"); // Should be filtered out but just in case
-
-                const img = await scrapeProfileImage(url);
-
-                if (img) {
-                    setScrapedImages(prev => ({ ...prev, [name]: img }));
-                    // Success! No need to update orchestraStates as it's removed from candidates
-                } else {
-                    throw new Error("No image found (null result)");
-                }
-            } catch (e) {
-                console.error(`Scrape failed for ${name} (Round ${state.round}, Attempt ${state.failuresInRound + 1}):`, e);
-
-                // Handle Logic:
-                // Round 1: "lo intentas 2 veces" -> Max 2 attempts
-                // Round 2: "una vez mas" -> Max 1 attempt
-                // Round 3: "así hasta hacer una tercera vuelta" -> Max 1 attempt (implied)
-
-                let maxAttempts = 1;
-                if (state.round === 1) maxAttempts = 2;
-
-                const newFailures = state.failuresInRound + 1;
-                let newRound = state.round;
-                let newPermanentFailure = false;
-                let resetFailures = newFailures;
-
-                if (newFailures >= maxAttempts) {
-                    // Exhausted attempts for this round -> Promote to next round
-                    newRound += 1;
-                    resetFailures = 0;
-
-                    if (newRound > 3) {
-                        newPermanentFailure = true; // Give up after conservation
-                    }
-                }
-                // If attempts < max, we stay in same round. 
-                // Since we sort by Round ASC, this orchestra remains at top priority 
-                // and will be retried immediately in next loop (satisfying "intentalo 2 veces")
-
-                setOrchestraStates(prev => ({
-                    ...prev,
-                    [name]: {
-                        round: newRound,
-                        failuresInRound: resetFailures,
-                        permanentFailure: newPermanentFailure
-                    }
-                }));
-            } finally {
-                setIsProcessing(false); // Trigger next loop
-            }
-        };
-
-        processNext();
-    }, [formaciones, scrapedImages, orchestraStates, isProcessing]);
 
     const filteredFormaciones = formaciones.filter(f =>
         f.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const currentYear = new Date().getFullYear();
+    const prevYear = currentYear - 1;
 
     return (
         <div className="space-y-8 animate-fadeIn">
@@ -219,58 +118,42 @@ const FormacionesPage: React.FC<FormacionesPageProps> = ({ events }) => {
             {/* Grid de Formaciones */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredFormaciones.map((formacion, index) => {
-                    // Determine the image to show: DB image > Scraped Image > Other Link (if DB info present)
-                    const displayImage = formacion.image || scrapedImages[formacion.name] || (formacion.hasDbInfo ? formacion.Otros : null);
-                    // Determine if we show custom background: Must have DB info AND a valid image/link
-                    const hasBackground = formacion.hasDbInfo && !!displayImage;
-
                     return (
                         <div
                             key={formacion.name}
                             className="group relative bg-gray-900/80 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all duration-500 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:-translate-y-2"
                         >
                             {/* Header / Cover Placeholder */}
-                            <div
-                                className={`h-32 relative flex items-center justify-center overflow-hidden transition-all duration-500`}
-                                style={{
-                                    background: hasBackground
-                                        ? `url(${displayImage}) center/cover no-repeat`
-                                        : undefined
-                                }}
-                            >
-                                {/* Gradient fallback if no background image */}
-                                {!hasBackground && (
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${getGradient(index)}`} />
-                                )}
+                            <div className={`h-32 relative flex items-center justify-center overflow-hidden transition-all duration-500`}>
+                                <div className={`absolute inset-0 bg-gradient-to-br ${getGradient(index)}`} />
 
                                 {/* Overlay */}
-                                <div className={`absolute inset-0 transition-colors duration-500 ${hasBackground
-                                    ? 'bg-black/60 group-hover:bg-black/50'
-                                    : 'bg-black/20 group-hover:bg-black/40'
-                                    }`} />
+                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500" />
 
                                 {/* Logo / Initials */}
                                 <div className="relative z-10 w-20 h-20 rounded-full bg-gray-900 border-4 border-gray-800 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
-                                    {displayImage ? (
-                                        <img src={displayImage} alt={formacion.name} className="w-full h-full rounded-full object-cover" />
-                                    ) : (
-                                        <span className="text-2xl font-bold text-white">
-                                            {getInitials(formacion.name)}
-                                        </span>
-                                    )}
+                                    <span className="text-2xl font-bold text-white">
+                                        {getInitials(formacion.name)}
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Content */}
                             <div className="p-6 text-center space-y-4">
                                 <div>
-                                    <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors drop-shadow-md">
+                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors drop-shadow-md">
                                         {formacion.name}
                                     </h3>
-                                    <span className="inline-flex items-center text-xs font-medium text-gray-400 bg-white/5 px-3 py-1 rounded-full border border-white/5">
-                                        <Music className="w-3 h-3 mr-1.5 text-purple-400" />
-                                        {formacion.count} actuaciones registradas
-                                    </span>
+                                    <div className="flex flex-col gap-2 items-center">
+                                        <div className="inline-flex items-center text-xs font-medium text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20 w-fit">
+                                            <Music className="w-3.5 h-3.5 mr-1.5" />
+                                            {currentYear}: <span className="font-bold ml-1">{formacion.currentCount}</span>
+                                        </div>
+                                        <div className="inline-flex items-center text-xs font-medium text-purple-300 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20 w-fit">
+                                            <Music className="w-3.5 h-3.5 mr-1.5" />
+                                            {prevYear}: <span className="font-bold ml-1">{formacion.prevCount}</span>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Contact & Socials Grid */}

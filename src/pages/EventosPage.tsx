@@ -3,7 +3,7 @@ import EventsList from '../components/EventsList';
 import { Event as AppEvent, RecentActivityItem } from '../types';
 import { runTransaction, exportUsageRef } from '../utils/firebase';
 import html2canvas from 'html2canvas';
-import VisitCounter from '../components/VisitCounter';
+
 import {
     Select,
     SelectContent,
@@ -809,7 +809,7 @@ const EventosPage: React.FC<EventosPageProps> = ({ events, recentActivity }) => 
             />
 
             <div className="container mx-auto px-4 mt-8 mb-4">
-                <VisitCounter />
+
             </div>
 
             {/* Festival Selection Modal */}
